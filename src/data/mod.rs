@@ -1,0 +1,63 @@
+use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
+
+lazy_static! {
+	static ref assets_folder: std::path::PathBuf = find_folder::Search::ParentsThenKids(3, 5).for_folder("assets").unwrap();
+}
+pub static ALL_CHARACTER_TYPES: &[&str] = &["adventurer", "female", "player", "soldier", "zombie"];
+
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+pub struct CharacterStats {
+	pub vitality: i32,
+	pub attack: i32,
+	pub defense: i32,
+	pub stamina: i32,
+}
+
+
+fn init_character_stats () {
+	use std::io::Write;
+
+	fn create_and_save_as_yaml(name: &str, vitality: i32, attack: i32, defense: i32, stamina: i32) {
+		let stats = CharacterStats::new(vitality, attack, defense, stamina);
+		let yaml = serde_yaml::to_string(&stats).unwrap();
+		// create directories if they don't exist
+		std::fs::create_dir_all(assets_folder.join("data/base_character_stats")).unwrap();
+		let mut file = std::fs::File::create(assets_folder.join(format!("data/base_character_stats/{}.yaml", name))).unwrap();
+		file.write_all(yaml.as_bytes()).unwrap();
+	}
+
+	create_and_save_as_yaml("adventurer", 1, 1, 2, 2);
+	create_and_save_as_yaml("female", 2, 1, 1, 2);
+	create_and_save_as_yaml("player", 1, 2, 1, 2);
+	create_and_save_as_yaml("soldier", 1, 2, 2, 1);
+	create_and_save_as_yaml("zombie", 1, 3, 1, 1);
+}
+
+lazy_static! {
+	static ref BASE_STATS: std::collections::HashMap<&'static str, CharacterStats> = ALL_CHARACTER_TYPES.iter().map(|&name| {
+		println!("Loading character stats for {}", name);
+		let path = assets_folder.join(format!("data/base_character_stats/{}.yaml", name));
+		if !path.exists() {
+			init_character_stats();
+		}
+		let stats = serde_yaml::from_reader(std::fs::File::open(path).unwrap()).unwrap();
+		(name, stats)
+	}).collect();
+}
+
+impl CharacterStats {
+	
+	pub fn new(vitality: i32, attack: i32, defense: i32, stamina: i32) -> CharacterStats {
+		CharacterStats {
+			vitality,
+			attack,
+			defense,
+			stamina,
+		}
+	}
+
+	pub fn base_character_stats() -> &'static std::collections::HashMap<&'static str, CharacterStats> {
+		&BASE_STATS
+	}
+}

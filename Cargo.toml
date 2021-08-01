@@ -1,4 +1,5 @@
 [package]
+
 name = "pp4_remake_new"
 version = "0.1.0"
 edition = "2018"
@@ -6,5 +7,13 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-conrod = { version = "0.55.0", features = ["glium", "winit"] }
+conrod_core = "0.65.0"
+conrod_glium = "0.65.0"
+conrod_winit = "0.65.0"
+glium = "0.23.0"
 find_folder = "0.3.0"
+winit = "0.18.1"
+
+serde = {version = "1.0", features = ["derive"]}
+serde_yaml = "0.8"
+lazy_static = "1.0.0"
