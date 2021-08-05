@@ -3,10 +3,18 @@ use conrod_core::{
 	color, widget, Colorable, Labelable, Positionable, Sizeable, Borderable, Ui, UiCell, Widget,
 };
 
+use crate::theme;
+
 widget_ids! {
 	pub struct Ids {
 		root,
+		
 		title,
+		
+		easy,
+		normal,
+		hard,
+		
 		back
 	}
 }
@@ -26,36 +34,45 @@ impl TestScene {
 }
 
 impl Scene for TestScene {
-	fn build(&mut self, ui: &mut UiCell, fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, scene_manager: &SceneManager) {
+	fn build(
+		&mut self, 
+		ui: &mut UiCell, 
+		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
+		scene_manager: &SceneManager,
+		theme: &theme::Theme
+	) {
 		let ids = &self.ids;
 
 		widget::Canvas::new()
-			.color(color::DARK_CHARCOAL)
+			.color(theme.background)
 			.border(0.0)
 			.w_h(ui.win_w, ui.win_h)
 			.set(ids.root, ui);
 
-		widget::Text::new("Test")
+		widget::Text::new("Select difficulty")
 			.font_id(*fonts.get("lato").unwrap())
-			.color(color::WHITE)
-			.font_size(64)
+			.color(theme.primary_text)
+			.font_size(32)
 			.middle_of(ids.root)
 			.set(ids.title, ui);
 
 		if widget::Button::new()
+			.color(theme.button_normal)
+			.hover_color(theme.button_hover)
+			.press_color(theme.button_pressed)
+			.label_color(theme.secondary_text)
+			.border(0.0)
 			.label("Back")
-			.color(color::WHITE)
-			.label_color(color::BLACK)
 			.label_font_id(*fonts.get("lato").unwrap())
-			.label_font_size(32)
-			.mid_bottom_of(ids.root)
-			.w_h(320.0, 64.0)
+			.label_font_size(24)
+			.parent(ids.root)
+			.mid_bottom_with_margin(24.0)
+			.w_h(320.0, 48.0)
 			.set(ids.back, ui)
 			.was_clicked()
 		{
-			// switch scene to main menu (index 0)
 			println!("Back");
-			self.next_scene_index = Some(0);
+			self.next_scene_index = Some(SceneManager::MAIN_MENU);
 		}
 	}
 	fn reset_switch_request(&mut self) { self.next_scene_index = None; }

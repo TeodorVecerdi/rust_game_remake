@@ -2,7 +2,7 @@
 use conrod_core::{
 	color, widget, Colorable, Labelable, Positionable, Sizeable, Borderable, Ui, UiCell, Widget,
 };
-
+use crate::theme;
 
 widget_ids! {
 	pub struct Ids {
@@ -36,7 +36,13 @@ impl MainMenu {
 }
 
 impl Scene for MainMenu {
-	fn build(&mut self, ui: &mut UiCell, fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, scene_manager: &SceneManager) {
+	fn build(
+		&mut self, 
+		ui: &mut UiCell, 
+		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
+		scene_manager: &SceneManager,
+		theme: &theme::Theme
+	) {
 		let ids = &self.ids;
 
 		const BUTTON_HEIGHT: f64 = 64.0;
@@ -80,7 +86,7 @@ impl Scene for MainMenu {
 			.set(ids.button_play, ui)
 			.was_clicked() {
 				println!("Play");
-				self.next_scene_index = Some(1);
+				self.next_scene_index = Some(SceneManager::TEST_SCENE);
 			}
 
 		if base_button.clone()

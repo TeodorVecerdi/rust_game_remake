@@ -1,13 +1,28 @@
+extern crate paste;
+
 mod main_menu;
 mod test_scene;
+#[macro_use] mod macros;
+
+
 use std::cell::RefCell;
+use std::panic;
+use paste::paste;
+use crate::theme;
+
 pub use main_menu::MainMenu;
 pub use test_scene::TestScene;
 
 pub trait Scene {
 	fn get_scene_switch_index(&self) -> Option<usize>;
 	fn reset_switch_request(&mut self);
-	fn build(&mut self, ui: &mut conrod_core::UiCell, fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, scene_manager: &SceneManager);
+	fn build(
+		&mut self, 
+		ui: &mut conrod_core::UiCell, 
+		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
+		scene_manager: &SceneManager,
+		theme: &theme::Theme
+	);
 }
 
 pub struct SceneManager {
@@ -15,20 +30,15 @@ pub struct SceneManager {
 	current_scene: usize,
 }
 
+generate_scene_collection!(MainMenu, TestScene);
 
 impl SceneManager {
-	pub fn new(ui: &mut conrod_core::Ui) -> Self {
-		Self {
-			scenes: vec![
-				RefCell::new(Box::new(MainMenu::new(ui))),
-				RefCell::new(Box::new(TestScene::new(ui))),
-				],
-			current_scene: 0,
-		}
+	pub fn set_starting_scene(&mut self, starting_scene: usize) {
+		self.current_scene = starting_scene;
 	}
 
 	// switch scene
-	pub fn switch_scene(&mut self, ui: &conrod_core::UiCell, scene: usize) {
+	pub fn switch_scene(&mut self, scene: usize) {
 		self.scenes.iter().for_each(|scene| scene.borrow_mut().reset_switch_request());
 		if scene < self.scenes.len() {
 			self.current_scene = scene;
@@ -39,41 +49,46 @@ impl SceneManager {
 	}
 
 	// build scene
-	pub fn build(&mut self, ui: &mut conrod_core::UiCell, fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>) {
-		// immutable reference to self
+	pub fn build(&mut self, 
+		ui: &mut conrod_core::UiCell, 
+		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>,
+		theme: &theme::ThemeManager,
+		events_loop: &glium::glutin::EventsLoopProxy
+	) {
+		self.scenes[self.current_scene].borrow_mut().build(ui, fonts, self, &theme.active_theme);
+		
 		let mut switch_index: Option<usize> = None;
-		match self.scenes[self.current_scene].borrow().get_scene_switch_index() {
-			Some(scene) => {
-				switch_index = Some(scene);
-			},
-			None => {},
+		if let Some(scene) = self.scenes[self.current_scene].borrow().get_scene_switch_index() {
+			switch_index = Some(scene);
 		}
 		if let Some(scene) = switch_index {
-			self.switch_scene(ui, scene);
+			self.switch_scene(scene);
+			events_loop.wakeup().unwrap_or_else(|e| eprintln!("wakeup error: {}", e));
 		}
-		self.scenes[self.current_scene].borrow_mut().build(ui, fonts, &self);
 	}
 
 	// add scene
-	pub fn add_scene(&mut self, scene: Box<dyn Scene>) {
+	pub fn add_scene(&mut self, scene: Box<dyn Scene>) -> &mut Self {
 		self.scenes.push(RefCell::new(scene));
+		self
 	}
 
 	// remove scene 
 	pub fn remove_scene(&mut self, scene: usize, replacement_scene: usize) {
 		if scene < self.scenes.len() {
+			// remove from scenes at index scene
 			self.scenes.remove(scene);
 		}
 		
-		if replacement_scene < scene {
-			self.current_scene = replacement_scene;
-		} else if replacement_scene > scene {
-			self.current_scene = replacement_scene - 1;
-		} else {
-			if self.scenes.len() == 0 {
-				panic!("SceneManager: No scenes left!");
+		self.current_scene = match replacement_scene {
+			r if r < scene => replacement_scene,
+			r if r > scene => replacement_scene - 1,
+			_ => {
+				if replacement_scene < self.scenes.len() {
+					panic!("SceneManager: No scenes left to replace removed scene with!");
+				}
+				0
 			}
-			self.current_scene = 0;
-		}
+		};
 	}
 }		
