@@ -1,22 +1,6 @@
 use conrod_core::color::Color;
 use lazy_static::lazy_static;
 
-#[derive(Debug, Clone, Copy)]
-pub struct Theme {
-    pub primary_text: Color,
-    pub secondary_text: Color,
-    pub background: Color,
-    pub panel_dark: Color,
-    pub panel_light: Color,
-    pub accent_color: Color,
-    pub accend_color_secondary: Color,
-
-    pub button_normal: Color,
-    pub button_hover: Color,
-    pub button_pressed: Color,
-    pub button_disabled: Color,
-}
-
 pub const DARK_THEME: Theme = Theme::const_default();
 
 pub const LIGHT_THEME: Theme = Theme {
@@ -34,20 +18,48 @@ pub const LIGHT_THEME: Theme = Theme {
     button_disabled: rgbi(0x555555),
 };
 
-/* lazy_static! {
-    // static ref DEFAULT_THEME: Theme = Theme::default();
-    pub static ref ACTIVE_THEME: Box<Theme> = Box::new(DARK_THEME);
-} */
+pub const MINT_CREAM: Color = rgb(246, 255, 255);
+pub const IMPERIAL_RED: Color = rgb(233, 54, 64);
+pub const PACIFIC_BLUE: Color = rgb(15, 163, 184);
+pub const OXFORD_BLUE: Color = rgb(0, 0, 25);
+pub const INDEPENDANCE: Color = rgb(73, 71, 91);
+pub const RAISIN_BLACK: Color = rgb(32, 32, 48);
 
-const MINT_CREAM: Color = rgb(246, 255, 255);
-const IMPERIAL_RED: Color = rgb(233, 54, 64);
-const PACIFIC_BLUE: Color = rgb(15, 163, 184);
-const OXFORD_BLUE: Color = rgb(0, 0, 25);
-const INDEPENDANCE: Color = rgb(73, 71, 91);
-const RAISIN_BLACK: Color = rgb(32, 32, 48);
+#[derive(Debug, Clone, Copy)]
+pub struct Theme {
+    pub primary_text: Color,
+    pub secondary_text: Color,
+    pub background: Color,
+    pub panel_dark: Color,
+    pub panel_light: Color,
+    pub accent_color: Color,
+    pub accend_color_secondary: Color,
 
+    pub button_normal: Color,
+    pub button_hover: Color,
+    pub button_pressed: Color,
+    pub button_disabled: Color,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy)]
+pub enum ThemeOption {
+    PrimaryText(Color),
+    SecondaryText(Color),
+    Background(Color),
+    PanelDark(Color),
+    PanelLight(Color),
+    AccentColor(Color),
+    AccendColorSecondary(Color),
+    ButtonNormal(Color),
+    ButtonHover(Color),
+    ButtonPressed(Color),
+    ButtonDisabled(Color),
+}
+
+#[allow(dead_code)]
 impl Theme {
-    const fn const_default() -> Self {
+    pub const fn const_default() -> Self {
         Theme {
             primary_text: MINT_CREAM,
             secondary_text: OXFORD_BLUE,
@@ -62,6 +74,102 @@ impl Theme {
             button_pressed: rgb(220, 220, 220),
             button_disabled: rgbi(0x555555),
         }
+    }
+
+    pub fn with_primary_text(mut self, color: Color) -> Self {
+        self.primary_text = color;
+        self
+    }
+
+    pub fn with_secondary_text(mut self, color: Color) -> Self {
+        self.secondary_text = color;
+        self
+    }
+
+    pub fn with_background(mut self, color: Color) -> Self {
+        self.background = color;
+        self
+    }
+
+    pub fn with_panel_dark(mut self, color: Color) -> Self {
+        self.panel_dark = color;
+        self
+    }
+
+    pub fn with_panel_light(mut self, color: Color) -> Self {
+        self.panel_light = color;
+        self
+    }
+
+    pub fn with_accent_color(mut self, color: Color) -> Self {
+        self.accent_color = color;
+        self
+    }
+
+    pub fn with_accent_color_secondary(mut self, color: Color) -> Self {
+        self.accend_color_secondary = color;
+        self
+    }
+
+    pub fn with_button_normal(mut self, color: Color) -> Self {
+        self.button_normal = color;
+        self
+    }
+
+    pub fn with_button_hover(mut self, color: Color) -> Self {
+        self.button_hover = color;
+        self
+    }
+
+    pub fn with_button_pressed(mut self, color: Color) -> Self {
+        self.button_pressed = color;
+        self
+    }
+
+    pub fn with_button_disabled(mut self, color: Color) -> Self {
+        self.button_disabled = color;
+        self
+    }
+
+    pub fn with_options(mut self, options: Vec<ThemeOption>) -> Self {
+        for option in options {
+            match option {
+                ThemeOption::PrimaryText(color) => {
+                    self.primary_text = color;
+                },
+                ThemeOption::SecondaryText(color) => {
+                    self.secondary_text = color;
+                },
+                ThemeOption::Background(color) => {
+                    self.background = color;
+                },
+                ThemeOption::PanelDark(color) => {
+                    self.panel_dark = color;
+                },
+                ThemeOption::PanelLight(color) => {
+                    self.panel_light = color;
+                },
+                ThemeOption::AccentColor(color) => {
+                    self.accent_color = color;
+                },
+                ThemeOption::AccendColorSecondary(color) => {
+                    self.accend_color_secondary = color;
+                },
+                ThemeOption::ButtonNormal(color) => {
+                    self.button_normal = color;
+                },
+                ThemeOption::ButtonHover(color) => {
+                    self.button_hover = color;
+                },
+                ThemeOption::ButtonPressed(color) => {
+                    self.button_pressed = color;
+                },
+                ThemeOption::ButtonDisabled(color) => {
+                    self.button_disabled = color;
+                },
+            }
+        }
+        self
     }
 }
 

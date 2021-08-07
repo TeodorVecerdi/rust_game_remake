@@ -13,10 +13,7 @@ mod scenes;
 mod data;
 mod theme;
 
-use crate::{
-	scenes::{SceneManager, Scene},
-	theme::ThemeManager,
-};
+use crate::{scenes::{SceneManager, Scene}, theme::ThemeManager};
 
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -45,7 +42,8 @@ fn get_cli_options() -> clap::ArgMatches {
 			.value_delimiter("x")
 			.number_of_values(2)
 			.default_values(&["1600", "900"])
-		).get_matches()
+		)
+		.get_matches()
 }
 
 /* Get width, height and fullscreen mode from the command line arguments. If any of them is not present default to 720p, false */
@@ -70,12 +68,13 @@ fn load_fonts(fonts: &mut HashMap<&str, conrod_core::text::font::Id>, ui: &mut c
 		let font_id = ui.fonts.insert_from_file(font_path).unwrap();
 		fonts.insert(k, font_id);
 		font_id
-	}).count();
+	})
+	.count();
 }
 
 fn get_display(events_loop: &glium::glutin::EventsLoop, width: u32, height: u32, fullscreen: bool, title: &str) -> glium::Display {
 	let window = glium::glutin::WindowBuilder::new()
-		.with_title("Hello, World")
+		.with_title(title)
 		.with_resizable(false)
 		.with_dimensions((width, height).into());
 	
@@ -89,17 +88,15 @@ fn get_display(events_loop: &glium::glutin::EventsLoop, width: u32, height: u32,
 		return display;
 	}
 	
-	let monitor_id = display.gl_window().get_primary_monitor();
-	
 	let window = glium::glutin::WindowBuilder::new()
-	.with_title("Hello, World")
-	.with_resizable(false)
-	.with_dimensions((width, height).into())
-	.with_fullscreen(Some(monitor_id));
+		.with_title(title)
+		.with_resizable(false)
+		.with_dimensions((width, height).into())
+		.with_fullscreen(Some(display.gl_window().get_primary_monitor()));
 	
 	let context = glium::glutin::ContextBuilder::new()
-	.with_vsync(true)
-	.with_multisampling(4);
+		.with_vsync(true)
+		.with_multisampling(4);
 	
 	glium::Display::new(window, context, &events_loop).unwrap()
 }
@@ -110,9 +107,13 @@ fn main() {
 
 	let mut events_loop = glium::glutin::EventsLoop::new();
 	
-	let display = get_display(&events_loop, width, height, fullscreen, "Hello, World");
-	
-	let display = support::GliumDisplayWinitWrapper(display);
+	let display = support::GliumDisplayWinitWrapper(get_display(
+		&events_loop, 
+		width, 
+		height, 
+		fullscreen, 
+		"Hello, World",
+	));
 
 	let mut ui = conrod_core::UiBuilder::new([width as f64, height as f64]).build();
 	let mut fonts: HashMap<&str, conrod_core::text::font::Id> = HashMap::new();
