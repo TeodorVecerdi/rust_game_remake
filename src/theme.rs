@@ -204,10 +204,10 @@ macro_rules! make_color {
 }
 
 // alias for color highlighter
-const fn rgb(r: u8, g: u8, b: u8) -> Color {
+pub const fn rgb(r: u8, g: u8, b: u8) -> Color {
     make_color!(r, g, b)
 }
 
-const fn rgbi(color: u32) -> Color {
+pub const fn rgbi(color: u32) -> Color {
     make_color!((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
 }

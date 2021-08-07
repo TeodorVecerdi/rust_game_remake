@@ -1,5 +1,8 @@
-use crate::{SceneManager, Scene};
-use crate::{data, theme};
+use crate::{
+	Scene, SceneManager,
+	generate_scene,
+	data, theme,
+	};
 
 use conrod_core::position::Place;
 use conrod_core::{
@@ -22,25 +25,13 @@ widget_ids! {
 	}
 }
 
-pub struct MainMenu {
-	ids: Ids,
-	next_scene_index: Option<usize>,
-}
-
-impl MainMenu {
-	pub fn new(ui: &mut Ui) -> Self {
-		Self {
-			ids: Ids::new(ui.widget_id_generator()),
-			next_scene_index: None,
-		}
-	}
-}
+generate_scene!(MainMenu);
 
 impl Scene for MainMenu {
 	fn build(
 		&mut self, 
 		ui: &mut UiCell,
-		images: &std::collections::HashMap<&str, conrod_core::image::Id>,
+		images: &std::collections::HashMap<String, conrod_core::image::Id>,
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
 		scene_manager: &SceneManager,
 		theme: &theme::Theme,

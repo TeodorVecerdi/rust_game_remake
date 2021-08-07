@@ -2,7 +2,10 @@ use conrod_core::{
 	widget, Colorable, Labelable, Positionable, Sizeable, Borderable, Ui, UiCell, Widget,
 };
 
-use crate::{data, scenes::{Scene, SceneManager}, theme};
+use crate::{
+	theme, data, generate_scene, 
+	scenes::{Scene, SceneManager}, 
+};
 
 widget_ids! {
 	pub struct Ids {
@@ -18,25 +21,13 @@ widget_ids! {
 	}
 }
 
-pub struct DifficultySelection {
-	ids: Ids,
-	next_scene_index: Option<usize>,
-}
-
-impl DifficultySelection {
-	pub fn new(ui: &mut Ui) -> Self {
-		Self {
-			ids: Ids::new(ui.widget_id_generator()),
-			next_scene_index: None,
-		}
-	}
-}
+generate_scene!(DifficultySelection);
 
 impl Scene for DifficultySelection {
 	fn build(
 		&mut self, 
 		ui: &mut UiCell, 
-		images: &std::collections::HashMap<&str, conrod_core::image::Id>,
+		images: &std::collections::HashMap<String, conrod_core::image::Id>,
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
 		scene_manager: &SceneManager,
 		theme: &theme::Theme,
@@ -89,7 +80,7 @@ impl Scene for DifficultySelection {
 			.set(ids.easy, ui)
 			.was_clicked() {
 				data_store.set("difficulty", data::Difficulty::Easy);
-				self.next_scene_index = Some(SceneManager::MAIN_MENU);
+				self.next_scene_index = Some(SceneManager::CHARACTER_CREATION);
 			}
 
 		if base_button.clone()
@@ -98,7 +89,7 @@ impl Scene for DifficultySelection {
 			.set(ids.normal, ui)
 			.was_clicked() {
 				data_store.set("difficulty",data::Difficulty::Normal);
-				self.next_scene_index = Some(SceneManager::MAIN_MENU);
+				self.next_scene_index = Some(SceneManager::CHARACTER_CREATION);
 			}
 
 		if base_button.clone()
@@ -107,7 +98,7 @@ impl Scene for DifficultySelection {
 			.set(ids.hard, ui)
 			.was_clicked() {
 				data_store.set("difficulty",data::Difficulty::Hard);
-				self.next_scene_index = Some(SceneManager::MAIN_MENU);
+				self.next_scene_index = Some(SceneManager::CHARACTER_CREATION);
 			}
 
 		if widget::Button::new()

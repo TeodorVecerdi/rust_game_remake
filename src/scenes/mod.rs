@@ -2,6 +2,7 @@ extern crate paste;
 
 mod main_menu;
 mod difficulty_selection;
+mod character_creation;
 #[macro_use] mod macros;
 
 use std::cell::RefCell;
@@ -9,8 +10,12 @@ use std::panic;
 use paste::paste;
 use crate::{data, theme};
 
+
+pub use generate_scene;
+
 pub use main_menu::MainMenu;
 pub use difficulty_selection::DifficultySelection;
+pub use character_creation::CharacterCreation;
 
 pub trait Scene {
 	fn get_scene_switch_index(&self) -> Option<usize>;
@@ -18,7 +23,7 @@ pub trait Scene {
 	fn build(
 		&mut self, 
 		ui: &mut conrod_core::UiCell, 
-		images: &std::collections::HashMap<&str, conrod_core::image::Id>, 
+		images: &std::collections::HashMap<String, conrod_core::image::Id>, 
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
 		scene_manager: &SceneManager,
 		theme: &theme::Theme,
@@ -32,7 +37,7 @@ pub struct SceneManager<'a> {
 	events_loop_proxy: &'a glium::glutin::EventsLoopProxy,
 }
 
-generate_scene_collection!(MainMenu, DifficultySelection);
+generate_scene_collection!(MainMenu, DifficultySelection, CharacterCreation);
 
 impl<'a> SceneManager<'a> {
 	pub fn wake_up_events_loop(&self) -> Result<(), winit::EventsLoopClosed> {
@@ -57,7 +62,7 @@ impl<'a> SceneManager<'a> {
 	// build scene
 	pub fn build(&mut self, 
 		ui: &mut conrod_core::UiCell,
-		images: &std::collections::HashMap<&str, conrod_core::image::Id>, 
+		images: &std::collections::HashMap<String, conrod_core::image::Id>, 
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>,
 		theme: &theme::ThemeManager,
 		data_store: &mut data::DataStore,
@@ -68,6 +73,7 @@ impl<'a> SceneManager<'a> {
 		if let Some(scene) = self.scenes[self.current_scene].borrow().get_scene_switch_index() {
 			switch_index = Some(scene);
 		}
+		
 		if let Some(scene) = switch_index {
 			self.switch_scene(scene);
 			self.wake_up_events_loop().unwrap_or_else(|e| eprintln!("wakeup error: {}", e));

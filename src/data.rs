@@ -1,15 +1,22 @@
-use std::collections::btree_set::Difference;
-
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
 lazy_static! {
 	static ref ASSETS_FOLDER: std::path::PathBuf = find_folder::Search::ParentsThenKids(3, 5).for_folder("assets").unwrap();
 }
+pub const CHARACTER_TYPE_COUNT: usize = 5;
 pub static ALL_CHARACTER_TYPES: &[&str] = &["adventurer", "female", "player", "soldier", "zombie"];
+pub static ALL_CHARACTER_STATES: &[&str] = &["attack", "hurt", "idle"];
 pub static ALL_DIFFICULTY_SETTINGS: &[&str] = &["easy", "normal", "hard"];
+pub const CHARACTER_NAME_COUNT: usize = 60;
+pub static ALL_CHARACTER_NAMES: [&str; CHARACTER_NAME_COUNT] = [
+        "Sammie", "Regina", "Freddie", "Enrique", "Mignon", "Vanna", "Jaime", "Len", "Deloris", "Jodee", "Robby", "Mckenzie", "Rodrigo", "Emmett", "Cathryn", "Edmundo", "Darell",
+        "Tyrell", "Hildegarde", "Julianne", "Marylou", "Andy", "Vilma", "Gala", "Linwood", "Riley", "Charlena", "Crissy", "Jeremy", "Ruby", "Williemae", "Ashlyn", "Elizabet",
+        "Donte", "Gerry", "Rico", "Marinda", "Alfonso", "Shavon", "Solange", "Mayola", "Randy", "Richard", "Leonel", "Rufina", "Earnest", "Cortez", "Teodoro", "Rhett", "Ruthe",
+        "Vicky", "Alice", "Yong", "Toya", "Machelle", "Jayne", "Zachariah", "Josie", "Steven", "Wilfredo"
+];
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct CharacterStats {
 	pub vitality: i32,
 	pub attack: i32,
@@ -17,7 +24,7 @@ pub struct CharacterStats {
 	pub stamina: i32,
 }
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct DifficultySettings {
 	pub enemy_base_attribute_points: i32,
 	pub enemy_attack_chance: i32,
@@ -194,10 +201,13 @@ impl DataStore {
 		self.dict.get_mut(key)
 	}
 
-	pub fn get_mut_t<T: std::any::Any>(&mut self, key: &'static str) -> Option<&mut Box<T>> {
-		match self.get_mut(key).map(|value| value.downcast_mut::<Box<T>>()) {
+	pub fn get_mut_t<T: std::any::Any>(&mut self, key: &'static str) -> Option<Box<&mut T>> {
+		match self.get_mut(key).map(|value| value.downcast_mut::<T>()) {
 			None => None,
-			Some(value) => value
+			Some(value) => match value {
+				None => None,
+				Some(value) => Some(Box::new(value)),
+			}
 		}
 	}
 

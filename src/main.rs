@@ -78,11 +78,11 @@ fn load_fonts(fonts: &mut HashMap<&str, conrod_core::text::font::Id>, ui: &mut c
 	.count();
 }
 
-fn load_image(display: &glium::Display, path: &str) -> glium::texture::Texture2d {
+fn load_image(display: &glium::Display, path: &str) -> glium::texture::SrgbTexture2d {
 	let image = image::open(&std::path::Path::new(&ASSETS_FOLDER.join("textures").join(path))).unwrap().to_rgba8();
 	let dimensions = image.dimensions();
 	let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), dimensions);
-	glium::texture::Texture2d::new(display, raw_image).unwrap()
+	glium::texture::SrgbTexture2d::new(display, raw_image).unwrap()
 }
 
 fn get_display(events_loop: &glium::glutin::EventsLoop, width: u32, height: u32, fullscreen: bool, title: &str) -> glium::Display {
@@ -134,17 +134,8 @@ fn main() {
 	load_fonts(&mut fonts, &mut ui);
 
 	let mut renderer = conrod_glium::Renderer::new(&display.0).unwrap();
-	let mut image_map = conrod_core::image::Map::new();
-	let images: std::collections::HashMap<_, _> = vec![
-		("dark_mode_icon", "misc/DarkModeIcon.png"),
-		("light_mode_icon", "misc/LightModeIcon.png"),
-	]
-	.into_iter()
-	.map(|(name, path)| {
-		let id = image_map.insert(load_image(&display.0, path));
-		(name, id)
-	})
-	.collect();
+	let mut image_map = conrod_core::image::Map::<glium::texture::SrgbTexture2d>::new();
+	let images = load_images(&mut image_map, &display.0);
 
 	let mut event_loop = support::EventLoop::new();
 	let event_loop_wakeup_proxy = events_loop.create_proxy();
@@ -225,4 +216,30 @@ fn main() {
 		
 		display.0.gl_window().window().set_title(format!("CPP Remake | {} FPS | {:.2}ms", (1.0_f64 / delta.as_secs_f64()) as u64, delta.as_secs_f64() * 1000.0).as_str());
 	}
+}
+
+fn load_images(
+	image_map: &mut conrod_core::image::Map<glium::texture::SrgbTexture2d>, 
+	display: &glium::Display
+) -> HashMap<String, conrod_core::image::Id> 
+{
+    let mut images: HashMap<String, _> = vec![
+		("dark_mode_icon", "misc/DarkModeIcon.png"),
+		("light_mode_icon", "misc/LightModeIcon.png"),
+	]
+	.into_iter()
+	.map(|(name, path)| {
+		let id = image_map.insert(load_image(display, path));
+		(String::from(name), id)
+	})
+	.collect();
+	
+	for &class in data::ALL_CHARACTER_TYPES {
+		for &state in data::ALL_CHARACTER_STATES {
+			let id = image_map.insert(load_image(display, format!("characters/{}/head_{}.png", class, state).as_str()));
+			images.insert(format!("{}_{}", class, state), id);
+		}
+	}
+
+	images
 }
