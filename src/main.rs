@@ -13,37 +13,50 @@ mod scenes;
 mod data;
 mod theme;
 
-use lazy_static::lazy_static;
 use crate::{
 	scenes::{SceneManager, Scene},
-	data::{CharacterStats},
-	theme::{Theme, ThemeManager},
+	theme::ThemeManager,
 };
 
+use lazy_static::lazy_static;
 use std::collections::HashMap;
 use glium::Surface;
+use clap::{Arg, ArgSettings};
 
 lazy_static! {
 	static ref ASSETS_FOLDER: std::path::PathBuf = find_folder::Search::ParentsThenKids(3, 5).for_folder("assets").unwrap();
 }
 
-/* Get width and height from the command line arguments. If any of them is not present default to 720p */
-fn get_dimensions() -> (u32, u32) {
-	let args: Vec<String> = std::env::args().collect();
-	if args.len() <= 2 {
-		return (1600, 900);
-	}
+fn get_cli_options() -> clap::ArgMatches {
+	clap::App::new("MyApp")
+		.arg(
+			Arg::new("fullscreen")
+			.long("fullscreen")
+			.short('f')
+			.about("Run in fullscreen mode")
+		)
+		.arg(
+			Arg::new("resolution")
+			.long("resolution")
+			.short('r')
+			.about("Set the resolution of the window")
+			.setting(ArgSettings::RequireDelimiter)
+			.setting(ArgSettings::MultipleValues)
+			.value_delimiter("x")
+			.number_of_values(2)
+			.default_values(&["1600", "900"])
+		).get_matches()
+}
 
-	let mut width: u32 = args[1].parse().unwrap();
-	let mut height: u32 = args[2].parse().unwrap();
+/* Get width, height and fullscreen mode from the command line arguments. If any of them is not present default to 720p, false */
+fn get_args(args: clap::ArgMatches) -> (u32, u32, bool) {
+	let resolution: Vec<u32> = args.values_of_t("resolution").unwrap();
+	
+	let width = std::cmp::max(*resolution.get(0).unwrap(), 600);
+	let height = std::cmp::max(*resolution.get(1).unwrap(), 600);
+	let fullscreen = args.is_present("fullscreen");
 
-	if width < 600 {
-		width = 600;
-	}
-	if height < 600 {
-		height = 600;
-	}
-	(width, height)
+	(width, height, fullscreen)
 }
 
 fn load_fonts(fonts: &mut HashMap<&str, conrod_core::text::font::Id>, ui: &mut conrod_core::Ui) {
@@ -60,18 +73,45 @@ fn load_fonts(fonts: &mut HashMap<&str, conrod_core::text::font::Id>, ui: &mut c
 	}).count();
 }
 
-
-fn main() {
-	let (width, height) = get_dimensions();
-	let mut events_loop = glium::glutin::EventsLoop::new();
+fn get_display(events_loop: &glium::glutin::EventsLoop, width: u32, height: u32, fullscreen: bool, title: &str) -> glium::Display {
 	let window = glium::glutin::WindowBuilder::new()
 		.with_title("Hello, World")
 		.with_resizable(false)
 		.with_dimensions((width, height).into());
+	
 	let context = glium::glutin::ContextBuilder::new()
 		.with_vsync(true)
 		.with_multisampling(4);
+
 	let display = glium::Display::new(window, context, &events_loop).unwrap();
+	
+	if !fullscreen {
+		return display;
+	}
+	
+	let monitor_id = display.gl_window().get_primary_monitor();
+	
+	let window = glium::glutin::WindowBuilder::new()
+	.with_title("Hello, World")
+	.with_resizable(false)
+	.with_dimensions((width, height).into())
+	.with_fullscreen(Some(monitor_id));
+	
+	let context = glium::glutin::ContextBuilder::new()
+	.with_vsync(true)
+	.with_multisampling(4);
+	
+	glium::Display::new(window, context, &events_loop).unwrap()
+}
+
+
+fn main() {
+	let (width, height,fullscreen) = get_args(get_cli_options());
+
+	let mut events_loop = glium::glutin::EventsLoop::new();
+	
+	let display = get_display(&events_loop, width, height, fullscreen, "Hello, World");
+	
 	let display = support::GliumDisplayWinitWrapper(display);
 
 	let mut ui = conrod_core::UiBuilder::new([width as f64, height as f64]).build();
@@ -82,7 +122,7 @@ fn main() {
 	let image_map = conrod_core::image::Map::<glium::texture::Texture2d>::new();
 
 	let mut scene_manager = SceneManager::new(&mut ui);
-	scene_manager.set_starting_scene(SceneManager::MAIN_MENU);
+	scene_manager.set_starting_scene(SceneManager::TEST_SCENE);
 
 	let mut event_loop = support::EventLoop::new();
 	let event_loop_wakeup_proxy = events_loop.create_proxy();
