@@ -1,3 +1,5 @@
+use std::collections::btree_set::Difference;
+
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +28,34 @@ pub struct DifficultySettings {
 	pub player_base_attribute_points: i32,
 	pub player_focus_chance: i32,
 	pub player_evade_chance: i32,
+}
+
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Copy)]
+pub enum Difficulty {
+	Easy,
+	Normal,
+	Hard,
+}
+
+impl Difficulty {
+	pub const fn as_str(self) -> &'static str {
+		match self {
+			Difficulty::Easy => "easy",
+			Difficulty::Normal => "normal",
+			Difficulty::Hard => "hard",
+		}
+	}
+}
+
+impl std::fmt::Display for Difficulty {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let display_name = match self {
+			Difficulty::Easy => "Easy",
+			Difficulty::Normal => "Normal",
+			Difficulty::Hard => "Hard",
+		};
+        write!(f, "Difficulty[{}]", display_name)
+    }
 }
 
 
@@ -118,5 +148,60 @@ impl DifficultySettings {
 
 	pub fn difficulty_settings() -> &'static std::collections::HashMap<&'static str, DifficultySettings> {
 		&DIFFICULTY_SETTINGS
+	}
+}
+
+
+pub struct DataStore {
+	dict: std::collections::HashMap<&'static str, Box<dyn std::any::Any>>,
+}
+
+#[allow(dead_code)]
+impl DataStore {
+	pub fn new() -> DataStore {
+		DataStore {
+			dict: std::collections::HashMap::new(),
+		}
+	}
+
+	pub fn has(&self, key: &str) -> bool {
+		self.dict.get(key).is_some()
+	}
+
+	pub fn set_boxed<T: std::any::Any + std::fmt::Debug>(&mut self, key: &'static str, value: Box<T>) {
+		self.dict.insert(key, value);
+	}
+
+	pub fn set<T: std::any::Any + std::fmt::Debug>(&mut self, key: &'static str, value: T) {
+		self.dict.insert(key, Box::new(value));
+	}
+
+	pub fn get(&self, key: &'static str) -> Option<&Box<dyn std::any::Any>> {
+		self.dict.get(key)
+	}
+
+	pub fn get_t<T: std::any::Any>(&self, key: &'static str) -> Option<Box<&T>> {
+		match self.get(key).map(|value| value.downcast_ref::<T>()) {
+			None => None,
+			Some(value) => match value {
+				None => None,
+				Some(value) => Some(Box::new(value)),
+			}
+		}
+	}
+
+	pub fn get_mut(&mut self, key: &'static str) -> Option<&mut Box<dyn std::any::Any>> {
+		self.dict.get_mut(key)
+	}
+
+	pub fn get_mut_t<T: std::any::Any>(&mut self, key: &'static str) -> Option<&mut Box<T>> {
+		match self.get_mut(key).map(|value| value.downcast_mut::<Box<T>>()) {
+			None => None,
+			Some(value) => value
+		}
+	}
+
+	pub fn remove(&mut self, key: &'static str) -> Option<Box<dyn std::any::Any>> {
+		self.dict.remove(key)
 	}
 }

@@ -10,10 +10,10 @@ macro_rules! generate_scene_ids {
 
 macro_rules! generate_scene_collection {
     ($($scene:ty),+) => {
-        impl SceneManager {
+        impl<'a> SceneManager<'a> {
             generate_scene_ids!(0usize, $($scene),*);
             
-            pub fn new(ui: &mut conrod_core::Ui) -> Self {
+            pub fn new(events_loop_proxy: &'a glium::glutin::EventsLoopProxy, ui: &mut conrod_core::Ui) -> Self {
                 Self {
                     scenes: vec![
                         $(
@@ -21,6 +21,7 @@ macro_rules! generate_scene_collection {
                         )*
                         ],
                     current_scene: SceneManager::MAIN_MENU,
+                    events_loop_proxy,
                 }
             }
         }

@@ -34,7 +34,7 @@ impl EventLoop {
 		// We don't want to loop any faster than 60 FPS, so wait until it has been at least 16ms
 		let last_update = self.last_update;
 		let duration_since_last_update = std::time::Instant::now().duration_since(last_update);
-		let ms16 = std::time::Duration::from_millis(16);
+		let ms16 = std::time::Duration::from_millis(2);
 		if duration_since_last_update < ms16 {
 			std::thread::sleep(ms16 - duration_since_last_update);
 		}

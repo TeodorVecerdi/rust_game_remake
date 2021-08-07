@@ -1,17 +1,16 @@
 extern crate paste;
 
 mod main_menu;
-mod test_scene;
+mod difficulty_selection;
 #[macro_use] mod macros;
-
 
 use std::cell::RefCell;
 use std::panic;
 use paste::paste;
-use crate::theme;
+use crate::{data, theme};
 
 pub use main_menu::MainMenu;
-pub use test_scene::TestScene;
+pub use difficulty_selection::DifficultySelection;
 
 pub trait Scene {
 	fn get_scene_switch_index(&self) -> Option<usize>;
@@ -19,20 +18,27 @@ pub trait Scene {
 	fn build(
 		&mut self, 
 		ui: &mut conrod_core::UiCell, 
+		images: &std::collections::HashMap<&str, conrod_core::image::Id>, 
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
 		scene_manager: &SceneManager,
-		theme: &theme::Theme
+		theme: &theme::Theme,
+		data_store: &mut data::DataStore,
 	);
 }
 
-pub struct SceneManager {
+pub struct SceneManager<'a> {
 	scenes: Vec<RefCell<Box<dyn Scene>>>,
 	current_scene: usize,
+	events_loop_proxy: &'a glium::glutin::EventsLoopProxy,
 }
 
-generate_scene_collection!(MainMenu, TestScene);
+generate_scene_collection!(MainMenu, DifficultySelection);
 
-impl SceneManager {
+impl<'a> SceneManager<'a> {
+	pub fn wake_up_events_loop(&self) -> Result<(), winit::EventsLoopClosed> {
+		self.events_loop_proxy.wakeup()
+	}
+
 	pub fn set_starting_scene(&mut self, starting_scene: usize) {
 		self.current_scene = starting_scene;
 	}
@@ -50,12 +56,13 @@ impl SceneManager {
 
 	// build scene
 	pub fn build(&mut self, 
-		ui: &mut conrod_core::UiCell, 
+		ui: &mut conrod_core::UiCell,
+		images: &std::collections::HashMap<&str, conrod_core::image::Id>, 
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>,
 		theme: &theme::ThemeManager,
-		events_loop: &glium::glutin::EventsLoopProxy
+		data_store: &mut data::DataStore,
 	) {
-		self.scenes[self.current_scene].borrow_mut().build(ui, fonts, self, &theme.active_theme);
+		self.scenes[self.current_scene].borrow_mut().build(ui, images, fonts, self, &theme.active_theme, data_store);
 		
 		let mut switch_index: Option<usize> = None;
 		if let Some(scene) = self.scenes[self.current_scene].borrow().get_scene_switch_index() {
@@ -63,7 +70,7 @@ impl SceneManager {
 		}
 		if let Some(scene) = switch_index {
 			self.switch_scene(scene);
-			events_loop.wakeup().unwrap_or_else(|e| eprintln!("wakeup error: {}", e));
+			self.wake_up_events_loop().unwrap_or_else(|e| eprintln!("wakeup error: {}", e));
 		}
 	}
 

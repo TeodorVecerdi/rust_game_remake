@@ -1,4 +1,5 @@
 #![feature(const_fn_floating_point_arithmetic)]
+#![feature(type_name_of_val)]
 
 #[macro_use]
 extern crate conrod_core;
@@ -7,18 +8,23 @@ extern crate conrod_glium;
 extern crate conrod_winit;
 extern crate find_folder;
 extern crate glium;
+extern crate image;
 
 mod support;
 mod scenes;
 mod data;
 mod theme;
 
-use crate::{scenes::{SceneManager, Scene}, theme::ThemeManager};
+use crate::{
+	scenes::{SceneManager, Scene}, 
+	theme::ThemeManager
+};
 
 use lazy_static::lazy_static;
 use std::collections::HashMap;
 use glium::Surface;
 use clap::{Arg, ArgSettings};
+use dark_light;
 
 lazy_static! {
 	static ref ASSETS_FOLDER: std::path::PathBuf = find_folder::Search::ParentsThenKids(3, 5).for_folder("assets").unwrap();
@@ -72,6 +78,13 @@ fn load_fonts(fonts: &mut HashMap<&str, conrod_core::text::font::Id>, ui: &mut c
 	.count();
 }
 
+fn load_image(display: &glium::Display, path: &str) -> glium::texture::Texture2d {
+	let image = image::open(&std::path::Path::new(&ASSETS_FOLDER.join("textures").join(path))).unwrap().to_rgba8();
+	let dimensions = image.dimensions();
+	let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), dimensions);
+	glium::texture::Texture2d::new(display, raw_image).unwrap()
+}
+
 fn get_display(events_loop: &glium::glutin::EventsLoop, width: u32, height: u32, fullscreen: bool, title: &str) -> glium::Display {
 	let window = glium::glutin::WindowBuilder::new()
 		.with_title(title)
@@ -80,6 +93,7 @@ fn get_display(events_loop: &glium::glutin::EventsLoop, width: u32, height: u32,
 	
 	let context = glium::glutin::ContextBuilder::new()
 		.with_vsync(true)
+		.with_hardware_acceleration(Some(true))
 		.with_multisampling(4);
 
 	let display = glium::Display::new(window, context, &events_loop).unwrap();
@@ -93,7 +107,7 @@ fn get_display(events_loop: &glium::glutin::EventsLoop, width: u32, height: u32,
 		.with_resizable(false)
 		.with_dimensions((width, height).into())
 		.with_fullscreen(Some(display.gl_window().get_primary_monitor()));
-	
+
 	let context = glium::glutin::ContextBuilder::new()
 		.with_vsync(true)
 		.with_multisampling(4);
@@ -120,16 +134,37 @@ fn main() {
 	load_fonts(&mut fonts, &mut ui);
 
 	let mut renderer = conrod_glium::Renderer::new(&display.0).unwrap();
-	let image_map = conrod_core::image::Map::<glium::texture::Texture2d>::new();
-
-	let mut scene_manager = SceneManager::new(&mut ui);
-	scene_manager.set_starting_scene(SceneManager::TEST_SCENE);
+	let mut image_map = conrod_core::image::Map::new();
+	let images: std::collections::HashMap<_, _> = vec![
+		("dark_mode_icon", "misc/DarkModeIcon.png"),
+		("light_mode_icon", "misc/LightModeIcon.png"),
+	]
+	.into_iter()
+	.map(|(name, path)| {
+		let id = image_map.insert(load_image(&display.0, path));
+		(name, id)
+	})
+	.collect();
 
 	let mut event_loop = support::EventLoop::new();
 	let event_loop_wakeup_proxy = events_loop.create_proxy();
 
+	let mut scene_manager = SceneManager::new(&event_loop_wakeup_proxy, &mut ui);
+	scene_manager.set_starting_scene(SceneManager::MAIN_MENU);
+
+
+	let mut data_store = data::DataStore::new();
 	let mut is_light_theme = false;
 	let mut theme_manager = ThemeManager::new();
+	match dark_light::detect() {
+		dark_light::Mode::Light => {
+			is_light_theme = true;
+			theme_manager.set_theme(theme::LIGHT_THEME);
+		},
+		_ => {}
+	}
+	data_store.set("is_light_theme", is_light_theme);
+	let mut last_frame_time = std::time::Instant::now();
 
 	'main: loop {
 		// Event handling loop
@@ -148,22 +183,6 @@ fn main() {
 							},
 						..
 					} => break 'main,
-					glium::glutin::WindowEvent::KeyboardInput {
-						input:
-							glium::glutin::KeyboardInput {
-								virtual_keycode: Some(glium::glutin::VirtualKeyCode::Space),
-								state: glium::glutin::ElementState::Released,
-								..
-							},
-						..
-					} => {
-						if is_light_theme {
-							theme_manager.set_theme(theme::DARK_THEME);
-						} else {
-							theme_manager.set_theme(theme::LIGHT_THEME);
-						}
-						is_light_theme = !is_light_theme;
-					}
 					glium::glutin::WindowEvent::Resized(size) => {
 						ui.win_w = size.width as f64;
 						ui.win_h = size.height as f64;
@@ -175,9 +194,20 @@ fn main() {
 			}
 		}
 
+		if data_store.has("should_toggle_theme") {
+			data_store.remove("should_toggle_theme");
+			if is_light_theme {
+				theme_manager.set_theme(theme::DARK_THEME);
+			} else {
+				theme_manager.set_theme(theme::LIGHT_THEME);
+			}
+			is_light_theme = !is_light_theme;
+			data_store.set("is_light_theme", is_light_theme);
+		}
+
 		{
 			let ui_cell = &mut ui.set_widgets();
-			scene_manager.build(ui_cell, &fonts, &theme_manager, &event_loop_wakeup_proxy);
+			scene_manager.build(ui_cell, &images, &fonts, &theme_manager, &mut data_store);
 		}
 
 
@@ -188,5 +218,11 @@ fn main() {
 			renderer.draw(&display.0, &mut target, &image_map).unwrap();
 			target.finish().unwrap();
 		}
+
+		let now = std::time::Instant::now();
+		let delta: std::time::Duration = now - last_frame_time;
+		last_frame_time = now;
+		
+		display.0.gl_window().window().set_title(format!("CPP Remake | {} FPS | {:.2}ms", (1.0_f64 / delta.as_secs_f64()) as u64, delta.as_secs_f64() * 1000.0).as_str());
 	}
 }

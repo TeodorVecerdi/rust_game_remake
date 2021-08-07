@@ -1,5 +1,4 @@
 use conrod_core::color::Color;
-use lazy_static::lazy_static;
 
 pub const DARK_THEME: Theme = Theme::const_default();
 
@@ -14,7 +13,7 @@ pub const LIGHT_THEME: Theme = Theme {
 
     button_normal: rgbi(0xafafaf),
     button_hover: rgbi(0x888888),
-    button_pressed: rgbi(0x9f9f9f),
+    button_pressed: rgbi(0xdadada),
     button_disabled: rgbi(0x555555),
 };
 
@@ -69,71 +68,72 @@ impl Theme {
             accent_color: IMPERIAL_RED,
             accend_color_secondary: PACIFIC_BLUE,
 
-            button_normal: rgbi(0xffffff),
-            button_hover: rgb(200, 200, 200),
-            button_pressed: rgb(220, 220, 220),
+            button_normal: rgbi(0xdadada),
+            button_hover: rgbi(0xafafaf),
+            button_pressed: rgbi(0xffffff),
             button_disabled: rgbi(0x555555),
         }
     }
 
-    pub fn with_primary_text(mut self, color: Color) -> Self {
+    pub const fn with_primary_text(mut self, color: Color) -> Self {
         self.primary_text = color;
         self
     }
 
-    pub fn with_secondary_text(mut self, color: Color) -> Self {
+    pub const fn with_secondary_text(mut self, color: Color) -> Self {
         self.secondary_text = color;
         self
     }
 
-    pub fn with_background(mut self, color: Color) -> Self {
+    pub const fn with_background(mut self, color: Color) -> Self {
         self.background = color;
         self
     }
 
-    pub fn with_panel_dark(mut self, color: Color) -> Self {
+    pub const fn with_panel_dark(mut self, color: Color) -> Self {
         self.panel_dark = color;
         self
     }
 
-    pub fn with_panel_light(mut self, color: Color) -> Self {
+    pub const fn with_panel_light(mut self, color: Color) -> Self {
         self.panel_light = color;
         self
     }
 
-    pub fn with_accent_color(mut self, color: Color) -> Self {
+    pub const fn with_accent_color(mut self, color: Color) -> Self {
         self.accent_color = color;
         self
     }
 
-    pub fn with_accent_color_secondary(mut self, color: Color) -> Self {
+    pub const fn with_accent_color_secondary(mut self, color: Color) -> Self {
         self.accend_color_secondary = color;
         self
     }
 
-    pub fn with_button_normal(mut self, color: Color) -> Self {
+    pub const fn with_button_normal(mut self, color: Color) -> Self {
         self.button_normal = color;
         self
     }
 
-    pub fn with_button_hover(mut self, color: Color) -> Self {
+    pub const fn with_button_hover(mut self, color: Color) -> Self {
         self.button_hover = color;
         self
     }
 
-    pub fn with_button_pressed(mut self, color: Color) -> Self {
+    pub const fn with_button_pressed(mut self, color: Color) -> Self {
         self.button_pressed = color;
         self
     }
 
-    pub fn with_button_disabled(mut self, color: Color) -> Self {
+    pub const fn with_button_disabled(mut self, color: Color) -> Self {
         self.button_disabled = color;
         self
     }
 
-    pub fn with_options(mut self, options: Vec<ThemeOption>) -> Self {
-        for option in options {
-            match option {
+    pub const fn with_options(mut self, options: &[ThemeOption]) -> Self {
+        let mut i = 0;
+        while i < options.len() {
+            match options[i] {
                 ThemeOption::PrimaryText(color) => {
                     self.primary_text = color;
                 },
@@ -168,6 +168,7 @@ impl Theme {
                     self.button_disabled = color;
                 },
             }
+            i+=1;
         }
         self
     }
@@ -175,20 +176,7 @@ impl Theme {
 
 impl Default for Theme {
     fn default() -> Self {
-        Theme {
-            primary_text: MINT_CREAM,
-            secondary_text: OXFORD_BLUE,
-            background: OXFORD_BLUE,
-            panel_dark: RAISIN_BLACK,
-            panel_light: INDEPENDANCE,
-            accent_color: IMPERIAL_RED,
-            accend_color_secondary: PACIFIC_BLUE,
-
-            button_normal: rgbi(0xffffff),
-            button_hover: rgb(200, 200, 200),
-            button_pressed: rgb(220, 220, 220),
-            button_disabled: rgb(150, 150, 150),
-        }
+        Theme::const_default()
     }
 }
 
