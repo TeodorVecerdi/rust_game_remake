@@ -14,6 +14,7 @@ mod support;
 mod scenes;
 mod data;
 mod theme;
+pub(crate) mod math;
 
 use crate::{
 	scenes::{SceneManager, Scene}, 
@@ -27,7 +28,7 @@ use clap::{Arg, ArgSettings};
 use dark_light;
 
 lazy_static! {
-	static ref ASSETS_FOLDER: std::path::PathBuf = find_folder::Search::ParentsThenKids(3, 5).for_folder("assets").unwrap();
+	pub static ref ASSETS_FOLDER: std::path::PathBuf = find_folder::Search::ParentsThenKids(3, 5).for_folder("assets").unwrap();
 }
 
 enum AppTheme {
@@ -155,6 +156,7 @@ fn main() {
 
 	let mut renderer = conrod_glium::Renderer::new(&display.0).unwrap();
 	let mut image_map = conrod_core::image::Map::<glium::texture::SrgbTexture2d>::new();
+
 	let images = load_images(&mut image_map, &display.0);
 
 	let mut event_loop = support::EventLoop::new();
@@ -183,7 +185,7 @@ fn main() {
 		},
 		AppTheme::Dark => {}
 	};
-	
+
 	data_store.set("is_light_theme", is_light_theme);
 	let mut last_frame_time = std::time::Instant::now();
 
@@ -228,7 +230,7 @@ fn main() {
 
 		{
 			let ui_cell = &mut ui.set_widgets();
-			scene_manager.build(ui_cell, &images, &fonts, &theme_manager, &mut data_store);
+			scene_manager.build(ui_cell, &images, &image_map, &fonts, &theme_manager, &mut data_store);
 		}
 
 
@@ -256,6 +258,10 @@ fn load_images(
     let mut images: HashMap<String, _> = vec![
 		("dark_mode_icon", "misc/DarkModeIcon.png"),
 		("light_mode_icon", "misc/LightModeIcon.png"),
+		("stat_vitality", "attributes/Vitality.png"),
+		("stat_attack", "attributes/attack.png"),
+		("stat_defense", "attributes/defense.png"),
+		("stat_stamina", "attributes/stamina.png"),
 	]
 	.into_iter()
 	.map(|(name, path)| {

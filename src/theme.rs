@@ -23,6 +23,7 @@ pub const PACIFIC_BLUE: Color = rgb(15, 163, 184);
 pub const OXFORD_BLUE: Color = rgb(0, 0, 25);
 pub const INDEPENDANCE: Color = rgb(73, 71, 91);
 pub const RAISIN_BLACK: Color = rgb(32, 32, 48);
+pub const TRANSPARENT: Color = rgbai(0x00000000);
 
 #[derive(Debug, Clone, Copy)]
 pub struct Theme {
@@ -208,6 +209,14 @@ pub const fn rgb(r: u8, g: u8, b: u8) -> Color {
     make_color!(r, g, b)
 }
 
+pub const fn rgba(r: u8, g: u8, b: u8, a: u8) -> Color {
+    make_color!(r, g, b, a)
+}
+
 pub const fn rgbi(color: u32) -> Color {
     make_color!((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
+}
+
+pub const fn rgbai(color: u32) -> Color {
+    make_color!((color >> 24) & 0xFF, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
 }

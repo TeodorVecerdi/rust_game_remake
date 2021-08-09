@@ -63,8 +63,8 @@ fn init_difficulty_settings () {
 		let difficulty_settings = DifficultySettings::new(enemy_base_attribute_points, enemy_attack_chance, enemy_heal_chance, enemy_do_nothing_chance, enemy_evade_chance, player_base_attribute_points, player_focus_chance, player_evade_chance);
 		let yaml = serde_yaml::to_string(&difficulty_settings).unwrap();
 		// create directories if they don't exist
-		std::fs::create_dir_all(ASSETS_FOLDER.join("data/difficulty_settings")).unwrap();
-		let mut file = std::fs::File::create(ASSETS_FOLDER.join(format!("data/difficulty_settings/{}.yaml", name))).unwrap();
+		std::fs::create_dir_all(super::ASSETS_FOLDER.join("data/difficulty_settings")).unwrap();
+		let mut file = std::fs::File::create(super::ASSETS_FOLDER.join(format!("data/difficulty_settings/{}.yaml", name))).unwrap();
 		file.write_all(yaml.as_bytes()).unwrap();
 	}
 

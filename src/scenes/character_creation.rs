@@ -57,6 +57,7 @@ impl Scene for CharacterCreation {
 		&mut self, 
 		ui: &mut conrod_core::UiCell, 
 		images: &std::collections::HashMap<String, conrod_core::image::Id>, 
+		image_map: &conrod_core::image::Map::<glium::texture::SrgbTexture2d>, 
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
 		scene_manager: &SceneManager,
 		theme: &theme::Theme,
@@ -107,7 +108,7 @@ impl Scene for CharacterCreation {
             .set(ids.title, ui);
 
         widget::Canvas::new()
-            .color(conrod_core::color::TRANSPARENT)
+            .color(theme::TRANSPARENT)
             .border(0.0)
             .x_align_to(ids.root, Align::Start)
             .y_place_on(ids.root, Place::Start(None))
@@ -115,7 +116,7 @@ impl Scene for CharacterCreation {
             .set(ids.left_col, ui);
 
         widget::Canvas::new()
-            .color(conrod_core::color::TRANSPARENT)
+            .color(theme::TRANSPARENT)
             .border(0.0)
             .x_align_to(ids.root, Align::End)
             .y_place_on(ids.root, Place::Start(None))
@@ -156,6 +157,8 @@ impl Scene for CharacterCreation {
 
         let character_type = data::ALL_CHARACTER_TYPES[create_character_settings.character_type];
         let image_id = images.get(&(String::from(character_type) + "_idle")).unwrap();
+        let (image_w, image_h) = image_map.get(image_id).unwrap().dimensions();
+        let image_ratio = image_w as f64 / image_h as f64;
         let image_size: f64 = {
             let v1 = ui.win_w / 2.0 - 512.0 + 64.0;
             let v2 = ui.win_h / 2.0 - 256.0;
@@ -171,7 +174,7 @@ impl Scene for CharacterCreation {
             }
         };
         widget::Image::new(*image_id)
-            .w_h(image_size, image_size)
+            .w_h(image_size * image_ratio, image_size)
             .y_place_on(ids.text_name, Place::End(Some(64.0)))
             .x_place_on(ids.left_col, Place::Middle)
             .set(ids.image, ui);

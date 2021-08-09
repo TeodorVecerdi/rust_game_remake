@@ -28,6 +28,7 @@ impl Scene for DifficultySelection {
 		&mut self, 
 		ui: &mut UiCell, 
 		images: &std::collections::HashMap<String, conrod_core::image::Id>,
+		image_map: &conrod_core::image::Map::<glium::texture::SrgbTexture2d>, 
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
 		scene_manager: &SceneManager,
 		theme: &theme::Theme,

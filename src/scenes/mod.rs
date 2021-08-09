@@ -25,7 +25,8 @@ pub trait Scene {
 	fn build(
 		&mut self, 
 		ui: &mut conrod_core::UiCell, 
-		images: &std::collections::HashMap<String, conrod_core::image::Id>, 
+		images: &std::collections::HashMap<String, conrod_core::image::Id>,
+		image_map: &conrod_core::image::Map::<glium::texture::SrgbTexture2d>, 
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
 		scene_manager: &SceneManager,
 		theme: &theme::Theme,
@@ -66,11 +67,12 @@ impl<'a> SceneManager<'a> {
 	pub fn build(&mut self, 
 		ui: &mut conrod_core::UiCell,
 		images: &std::collections::HashMap<String, conrod_core::image::Id>, 
+		image_map: &conrod_core::image::Map::<glium::texture::SrgbTexture2d>, 
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>,
 		theme: &theme::ThemeManager,
 		data_store: &mut data::DataStore,
 	) {
-		self.scenes[self.current_scene].borrow_mut().build(ui, images, fonts, self, &theme.active_theme, data_store);
+		self.scenes[self.current_scene].borrow_mut().build(ui, images, image_map, fonts, self, &theme.active_theme, data_store);
 		
 		let mut switch_index: Option<usize> = None;
 		if let Some(scene) = self.scenes[self.current_scene].borrow().get_scene_switch_index() {

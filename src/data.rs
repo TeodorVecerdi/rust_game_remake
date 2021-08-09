@@ -1,5 +1,3 @@
-use lazy_static::lazy_static;
-
 mod difficulty;
 pub use difficulty
 :: {
