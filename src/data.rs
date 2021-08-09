@@ -140,8 +140,18 @@ impl CharacterStats {
 }
 
 impl DifficultySettings {
-	pub fn new(enemy_base_attribute_points: i32, enemy_attack_chance: i32, enemy_heal_chance: i32, enemy_do_nothing_chance: i32, enemy_evade_chance: i32, player_base_attribute_points: i32, player_focus_chance: i32, player_evade_chance: i32) -> DifficultySettings {
-				DifficultySettings {
+	pub fn new(
+		enemy_base_attribute_points: i32, 
+		enemy_attack_chance: i32, 
+		enemy_heal_chance: i32, 
+		enemy_do_nothing_chance: i32, 
+		enemy_evade_chance: i32, 
+		player_base_attribute_points: i32, 
+		player_focus_chance: i32, 
+		player_evade_chance: i32
+	) -> DifficultySettings 
+	{
+		DifficultySettings {
 			enemy_base_attribute_points,
 			enemy_attack_chance,
 			enemy_heal_chance,

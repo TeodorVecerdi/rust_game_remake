@@ -6,7 +6,7 @@ use crate::{
 
 use conrod_core::position::Place;
 use conrod_core::{
-	position::{Align, Relative}, 
+	position::Relative, 
 	widget,
 	Borderable, Colorable, Labelable, Positionable, Sizeable, Ui, UiCell, Widget, 
 };

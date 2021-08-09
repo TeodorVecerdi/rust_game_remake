@@ -39,6 +39,7 @@ pub struct SceneManager<'a> {
 
 generate_scene_collection!(MainMenu, DifficultySelection, CharacterCreation);
 
+#[allow(dead_code)]
 impl<'a> SceneManager<'a> {
 	pub fn wake_up_events_loop(&self) -> Result<(), winit::EventsLoopClosed> {
 		self.events_loop_proxy.wakeup()

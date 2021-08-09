@@ -30,6 +30,12 @@ lazy_static! {
 	static ref ASSETS_FOLDER: std::path::PathBuf = find_folder::Search::ParentsThenKids(3, 5).for_folder("assets").unwrap();
 }
 
+enum AppTheme {
+	Auto,
+	Dark,
+	Light
+}
+
 fn get_cli_options() -> clap::ArgMatches {
 	clap::App::new("MyApp")
 		.arg(
@@ -44,23 +50,37 @@ fn get_cli_options() -> clap::ArgMatches {
 			.short('r')
 			.about("Set the resolution of the window")
 			.setting(ArgSettings::RequireDelimiter)
-			.setting(ArgSettings::MultipleValues)
 			.value_delimiter("x")
 			.number_of_values(2)
 			.default_values(&["1600", "900"])
+		)
+		.arg(
+			Arg::new("theme")
+			.long("theme")
+			.short('t')
+			.about("Set the default theme to use")
+			.setting(ArgSettings::IgnoreCase)
+			.setting(ArgSettings::TakesValue)
+			.possible_values(&["dark", "light", "auto"])
+			.default_value("auto")
 		)
 		.get_matches()
 }
 
 /* Get width, height and fullscreen mode from the command line arguments. If any of them is not present default to 720p, false */
-fn get_args(args: clap::ArgMatches) -> (u32, u32, bool) {
+fn get_args(args: clap::ArgMatches) -> (u32, u32, AppTheme, bool) {
 	let resolution: Vec<u32> = args.values_of_t("resolution").unwrap();
 	
 	let width = std::cmp::max(*resolution.get(0).unwrap(), 600);
 	let height = std::cmp::max(*resolution.get(1).unwrap(), 600);
+	let app_theme = match args.value_of("theme").unwrap() {
+		"auto" => AppTheme::Auto,
+		"dark" => AppTheme::Dark,
+		_ | "light" => AppTheme::Light,
+	};
 	let fullscreen = args.is_present("fullscreen");
 
-	(width, height, fullscreen)
+	(width, height, app_theme, fullscreen)
 }
 
 fn load_fonts(fonts: &mut HashMap<&str, conrod_core::text::font::Id>, ui: &mut conrod_core::Ui) {
@@ -117,7 +137,7 @@ fn get_display(events_loop: &glium::glutin::EventsLoop, width: u32, height: u32,
 
 
 fn main() {
-	let (width, height,fullscreen) = get_args(get_cli_options());
+	let (width, height, app_theme, fullscreen) = get_args(get_cli_options());
 
 	let mut events_loop = glium::glutin::EventsLoop::new();
 	
@@ -147,13 +167,23 @@ fn main() {
 	let mut data_store = data::DataStore::new();
 	let mut is_light_theme = false;
 	let mut theme_manager = ThemeManager::new();
-	match dark_light::detect() {
-		dark_light::Mode::Light => {
+	match app_theme {
+		AppTheme::Auto => {
+			match dark_light::detect() {
+				dark_light::Mode::Light => {
+					is_light_theme = true;
+					theme_manager.set_theme(theme::LIGHT_THEME);
+				},
+				_ => {}
+			}
+		},
+		AppTheme::Light => {
 			is_light_theme = true;
 			theme_manager.set_theme(theme::LIGHT_THEME);
 		},
-		_ => {}
-	}
+		AppTheme::Dark => {}
+	};
+	
 	data_store.set("is_light_theme", is_light_theme);
 	let mut last_frame_time = std::time::Instant::now();
 

@@ -8,7 +8,7 @@ use conrod_core::position::Place;
 use conrod_core::{
 	position::{Align, Relative}, 
 	widget,
-	Borderable, Colorable, Labelable, Positionable, Sizeable, Ui, UiCell, Widget, 
+	Borderable, Colorable, Labelable, Positionable, Sizeable, Ui, Widget, 
 };
 use rand::Rng;
 
