@@ -54,7 +54,7 @@ impl Scene for DifficultySelection {
 
 		widget::Text::new("Select difficulty")
 			.font_id(*fonts.get("lato").unwrap())
-			.color(theme.primary_text)
+			.color(theme.text_primary)
 			.align_middle_y_of(ids.root)
 			.align_middle_x()
 			.up(-vertical_spacing)
@@ -68,10 +68,10 @@ impl Scene for DifficultySelection {
 			.w_h(BUTTON_WIDTH, BUTTON_HEIGHT)
 			.color(theme.button_normal)
 			.hover_color(theme.button_hover)
-			.press_color(theme.button_pressed)
+			.press_color(theme.button_press)
 			.border(0.0)
 			.label_font_size(24)
-			.label_color(theme.secondary_text)
+			.label_color(theme.text_secondary)
 			.label_font_id(*fonts.get("lato").unwrap())
 			;
 		
@@ -105,8 +105,8 @@ impl Scene for DifficultySelection {
 		if widget::Button::new()
 			.color(theme.button_normal)
 			.hover_color(theme.button_hover)
-			.press_color(theme.button_pressed)
-			.label_color(theme.secondary_text)
+			.press_color(theme.button_press)
+			.label_color(theme.text_secondary)
 			.border(0.0)
 			.label("Back")
 			.label_font_id(*fonts.get("lato").unwrap())

@@ -3,8 +3,11 @@ use conrod_core::color::Color;
 pub const DARK_THEME: Theme = Theme::const_default();
 
 pub const LIGHT_THEME: Theme = Theme {
-    primary_text: OXFORD_BLUE,
-    secondary_text: MINT_CREAM,
+    text_primary: OXFORD_BLUE,
+    text_secondary: MINT_CREAM,
+    text_light: MINT_CREAM,
+    text_dark: OXFORD_BLUE,
+
     background: MINT_CREAM,
     panel_dark: INDEPENDANCE,
     panel_light: RAISIN_BLACK,
@@ -13,7 +16,7 @@ pub const LIGHT_THEME: Theme = Theme {
 
     button_normal: rgbi(0xafafaf),
     button_hover: rgbi(0x888888),
-    button_pressed: rgbi(0xdadada),
+    button_press: rgbi(0x666666),
     button_disabled: rgbi(0x555555),
 };
 
@@ -21,14 +24,17 @@ pub const MINT_CREAM: Color = rgb(246, 255, 255);
 pub const IMPERIAL_RED: Color = rgb(233, 54, 64);
 pub const PACIFIC_BLUE: Color = rgb(15, 163, 184);
 pub const OXFORD_BLUE: Color = rgb(0, 0, 25);
-pub const INDEPENDANCE: Color = rgb(73, 71, 91);
+pub const INDEPENDANCE: Color = rgbi(0xdadada);
 pub const RAISIN_BLACK: Color = rgb(32, 32, 48);
 pub const TRANSPARENT: Color = rgbai(0x00000000);
 
 #[derive(Debug, Clone, Copy)]
 pub struct Theme {
-    pub primary_text: Color,
-    pub secondary_text: Color,
+    pub text_primary: Color,
+    pub text_secondary: Color,
+    pub text_light: Color,
+    pub text_dark: Color,
+
     pub background: Color,
     pub panel_dark: Color,
     pub panel_light: Color,
@@ -37,7 +43,7 @@ pub struct Theme {
 
     pub button_normal: Color,
     pub button_hover: Color,
-    pub button_pressed: Color,
+    pub button_press: Color,
     pub button_disabled: Color,
 }
 
@@ -61,8 +67,11 @@ pub enum ThemeOption {
 impl Theme {
     pub const fn const_default() -> Self {
         Theme {
-            primary_text: MINT_CREAM,
-            secondary_text: OXFORD_BLUE,
+            text_primary: MINT_CREAM,
+            text_secondary: OXFORD_BLUE,
+            text_light: MINT_CREAM,
+            text_dark: OXFORD_BLUE,
+
             background: OXFORD_BLUE,
             panel_dark: RAISIN_BLACK,
             panel_light: INDEPENDANCE,
@@ -71,18 +80,18 @@ impl Theme {
 
             button_normal: rgbi(0xdadada),
             button_hover: rgbi(0xafafaf),
-            button_pressed: rgbi(0xffffff),
+            button_press: rgbi(0xffffff),
             button_disabled: rgbi(0x555555),
         }
     }
 
     pub const fn with_primary_text(mut self, color: Color) -> Self {
-        self.primary_text = color;
+        self.text_primary = color;
         self
     }
 
     pub const fn with_secondary_text(mut self, color: Color) -> Self {
-        self.secondary_text = color;
+        self.text_secondary = color;
         self
     }
 
@@ -122,7 +131,7 @@ impl Theme {
     }
 
     pub const fn with_button_pressed(mut self, color: Color) -> Self {
-        self.button_pressed = color;
+        self.button_press = color;
         self
     }
 
@@ -136,10 +145,10 @@ impl Theme {
         while i < options.len() {
             match options[i] {
                 ThemeOption::PrimaryText(color) => {
-                    self.primary_text = color;
+                    self.text_primary = color;
                 },
                 ThemeOption::SecondaryText(color) => {
-                    self.secondary_text = color;
+                    self.text_secondary = color;
                 },
                 ThemeOption::Background(color) => {
                     self.background = color;
@@ -163,7 +172,7 @@ impl Theme {
                     self.button_hover = color;
                 },
                 ThemeOption::ButtonPressed(color) => {
-                    self.button_pressed = color;
+                    self.button_press = color;
                 },
                 ThemeOption::ButtonDisabled(color) => {
                     self.button_disabled = color;

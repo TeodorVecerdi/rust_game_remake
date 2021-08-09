@@ -100,7 +100,7 @@ impl Scene for CharacterCreation {
             .set(ids.root, ui);
 
         widget::Text::new("Create a Character")
-            .color(theme.primary_text)
+            .color(theme.text_primary)
             .font_size(64)
             .font_id(*fonts.get("lato").unwrap())
             .x_align(Align::Middle)
@@ -124,7 +124,7 @@ impl Scene for CharacterCreation {
             .set(ids.right_col, ui);
 
         widget::Text::new(&(String::from("Name: ") + data::ALL_CHARACTER_NAMES[create_character_settings.name]))
-            .color(theme.primary_text)
+            .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
             .x_place_on(ids.left_col, Place::Start(Some(32.0)))
@@ -134,12 +134,12 @@ impl Scene for CharacterCreation {
         let base_button = widget::Button::new()
             .color(theme.button_normal)
             .hover_color(theme.button_hover)
-            .press_color(theme.button_pressed)
+            .press_color(theme.button_press)
             .h(BUTTON_HEIGHT)
             .border(0.0)
             .label_font_size(24)
             .label_font_id(*fonts.get("lato").unwrap())
-            .label_color(theme.secondary_text);
+            .label_color(theme.text_secondary);
 
         if base_button.clone()
             .label("Randomize")
@@ -180,7 +180,7 @@ impl Scene for CharacterCreation {
             .set(ids.image, ui);
 
         widget::Text::new(&character_type.to_uppercase())
-            .color(theme.primary_text)
+            .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
             .x_place_on(ids.left_col, Place::Middle)
@@ -219,7 +219,7 @@ impl Scene for CharacterCreation {
 
 
         widget::Text::new(&format!("Remaining points: {}", points_remaining))
-            .color(theme.primary_text)
+            .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
             .y_place_on(ids.right_col, Place::End(None))
@@ -227,7 +227,7 @@ impl Scene for CharacterCreation {
             .set(ids.text_remaining_points, ui);
         
         widget::Text::new(&format!("Vitality: {}", create_character_settings.assigned_stats.vitality + base_character_stats.vitality))
-            .color(theme.primary_text)
+            .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
             .y_place_on(ids.text_remaining_points, Place::End(Some(48.0)))
@@ -235,7 +235,7 @@ impl Scene for CharacterCreation {
             .set(ids.text_vitality, ui);
 
         widget::Text::new(&format!("Attack: {}", create_character_settings.assigned_stats.attack + base_character_stats.attack))
-            .color(theme.primary_text)
+            .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
             .y_place_on(ids.text_vitality, Place::End(Some(40.0)))
@@ -243,7 +243,7 @@ impl Scene for CharacterCreation {
             .set(ids.text_attack, ui);
 
         widget::Text::new(&format!("Defense: {}", create_character_settings.assigned_stats.defense + base_character_stats.defense))
-            .color(theme.primary_text)
+            .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
             .y_place_on(ids.text_attack, Place::End(Some(40.0)))
@@ -251,7 +251,7 @@ impl Scene for CharacterCreation {
             .set(ids.text_defense, ui);
 
         widget::Text::new(&format!("Stamina: {}", create_character_settings.assigned_stats.stamina + base_character_stats.stamina))
-            .color(theme.primary_text)
+            .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
             .y_place_on(ids.text_defense, Place::End(Some(40.0)))

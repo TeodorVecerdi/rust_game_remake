@@ -63,7 +63,7 @@ impl Scene for MainMenu {
 
 
 		widget::Text::new("Main Menu")
-			.color(theme.primary_text)
+			.color(theme.text_primary)
 			.font_size(TITLE_HEIGHT as u32)
 			.h(0.0)
 			.font_id(*fonts.get("lato").unwrap())
@@ -77,9 +77,9 @@ impl Scene for MainMenu {
 			.border(0.0)
 			.color(theme.button_normal)
 			.hover_color(theme.button_hover)
-			.press_color(theme.button_pressed)
+			.press_color(theme.button_press)
 			.label_font_size(28)
-			.label_color(theme.secondary_text)
+			.label_color(theme.text_secondary)
 			.label_font_id(*fonts.get("lato").unwrap())
 			;
 
@@ -123,7 +123,7 @@ impl Scene for MainMenu {
 		if widget::Button::image(theme_image_id)
 			.label(match is_light_theme { true => "Switch to dark mode", false => "Switch to light mode"})
 			.label_font_size(24)
-			.label_color(theme.primary_text)
+			.label_color(theme.text_primary)
 			.label_font_id(*fonts.get("lato").unwrap())
 			.label_x(Relative::Place(Place::Start(Some(64.0 + 8.0))))
 			.w_h(64.0, 64.0)

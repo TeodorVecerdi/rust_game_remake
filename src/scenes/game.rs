@@ -104,7 +104,6 @@ impl Scene for Game {
             data_store.set("player_health_current", player_health_current);
         }
 
-        const HEALTHBAR_WIDTH: f64 = 256.0;
         const HEALTHBAR_HEIGHT: f64 = 48.0;
         const STAT_HEIGHT: f64 = 96.0;
         const STAT_WIDTH: f64 = 64.0;
@@ -145,7 +144,7 @@ impl Scene for Game {
             .set(ids.player_container, ui);
 
         widget::Text::new("Player Name")
-            .color(theme.primary_text)
+            .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
             .x_align_to(ids.player_container, Align::Start)
@@ -153,7 +152,7 @@ impl Scene for Game {
             .set(ids.player_text_name, ui);
 
         widget::Text::new("Thinking...")
-            .color(theme.primary_text)
+            .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
             .x_align_to(ids.player_container, Align::End)
@@ -253,13 +252,13 @@ impl Scene for Game {
         let base_button_player = widget::Button::new()
             .color(theme.button_normal)
             .hover_color(theme.button_hover)
-            .press_color(theme.button_pressed)
+            .press_color(theme.button_press)
             .h(button_height)
             .w(player_right_column_width)
             .border(0.0)
             .label_font_size(24)
             .label_font_id(*fonts.get("lato").unwrap())
-            .label_color(theme.primary_text);
+            .label_color(theme.text_secondary);
 
         if base_button_player.clone()
             .label("ATTACK")
@@ -371,7 +370,7 @@ fn healthbar(
     widget::Text::new(&format!("{}/{}", current_value as i32, max_value as i32))
         .font_size(24)
         .font_id(*fonts.get("lato").unwrap())
-        .color(theme.primary_text)
+        .color(theme.text_light)
         .y_align_to(background_id, Align::Middle)
         .x_place_on(background_id, Place::End(Some(16.0)))
         .parent(fill_id)
@@ -406,7 +405,7 @@ fn stat (
     widget::Text::new(&format!("{}", stat_value))
         .font_size(24)
         .font_id(*fonts.get("lato").unwrap())
-        .color(theme.primary_text)
+        .color(theme.text_light)
         .y_place_on(background_id, Place::Start(Some(stat_margin)))
         .x_align_to(background_id, Align::Middle)
         .parent(background_id)
