@@ -3,6 +3,7 @@ extern crate paste;
 mod main_menu;
 mod difficulty_selection;
 mod character_creation;
+mod game;
 #[macro_use] mod macros;
 
 use std::cell::RefCell;
@@ -16,6 +17,7 @@ pub use generate_scene;
 pub use main_menu::MainMenu;
 pub use difficulty_selection::DifficultySelection;
 pub use character_creation::CharacterCreation;
+pub use game::Game;
 
 pub trait Scene {
 	fn get_scene_switch_index(&self) -> Option<usize>;
@@ -37,7 +39,7 @@ pub struct SceneManager<'a> {
 	events_loop_proxy: &'a glium::glutin::EventsLoopProxy,
 }
 
-generate_scene_collection!(MainMenu, DifficultySelection, CharacterCreation);
+generate_scene_collection!(MainMenu, DifficultySelection, CharacterCreation, Game);
 
 #[allow(dead_code)]
 impl<'a> SceneManager<'a> {

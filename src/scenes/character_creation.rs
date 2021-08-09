@@ -1,12 +1,11 @@
 use crate::{
     Scene, SceneManager, 
     generate_scene,
-    data, theme
+    data, theme,
 };
 
-use conrod_core::position::Place;
 use conrod_core::{
-	position::{Align, Relative}, 
+	position::{Align, Place, Relative}, 
 	widget,
 	Borderable, Colorable, Labelable, Positionable, Sizeable, Ui, Widget, 
 };
@@ -51,7 +50,7 @@ widget_ids! {
 	}
 }
 
-generate_scene!(CharacterCreation);
+generate_scene!(CharacterCreation -> Ids);
 
 impl Scene for CharacterCreation {
     fn build(
@@ -409,8 +408,7 @@ impl Scene for CharacterCreation {
             .set(ids.button_create, ui)
             .was_clicked()
         {
-            println!("Create character");
-            todo!("Move to next scene")
+            self.next_scene_index = Some(SceneManager::GAME);
         }
 
         

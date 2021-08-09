@@ -25,7 +25,7 @@ widget_ids! {
 	}
 }
 
-generate_scene!(MainMenu);
+generate_scene!(MainMenu -> Ids);
 
 impl Scene for MainMenu {
 	fn build(

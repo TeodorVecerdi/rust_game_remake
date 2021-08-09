@@ -21,7 +21,7 @@ widget_ids! {
 	}
 }
 
-generate_scene!(DifficultySelection);
+generate_scene!(DifficultySelection -> Ids);
 
 impl Scene for DifficultySelection {
 	fn build(

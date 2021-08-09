@@ -50,5 +50,21 @@ macro_rules! generate_scene_collection {
                 }
             }
         }
+    };
+    
+    ($scene:ident -> $ids:ty) => {
+        pub struct $scene {
+            ids: $ids,
+            next_scene_index: Option<usize>,
+        }
+        
+        impl $scene {
+            pub fn new(ui: &mut Ui) -> Self {
+                Self {
+                    ids: <$ids>::new(ui.widget_id_generator()),
+                    next_scene_index: None,
+                }
+            }
+        }
     }
 }
