@@ -1,5 +1,6 @@
 #![feature(const_fn_floating_point_arithmetic)]
 #![feature(type_name_of_val)]
+#![feature(duration_consts_2)]
 
 #[macro_use]
 extern crate conrod_core;

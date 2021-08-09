@@ -18,14 +18,14 @@ lazy_static! {
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct DifficultySettings {
 	pub enemy_base_attribute_points: i32,
-	pub enemy_attack_chance: i32,
-	pub enemy_heal_chance: i32,
-	pub enemy_do_nothing_chance: i32,
-	pub enemy_evade_chance: i32,
+	pub enemy_attack_chance: f64,
+	pub enemy_heal_chance: f64,
+	pub enemy_do_nothing_chance: f64,
+	pub enemy_evade_chance: f64,
 
 	pub player_base_attribute_points: i32,
-	pub player_focus_chance: i32,
-	pub player_evade_chance: i32,
+	pub player_focus_chance: f64,
+	pub player_evade_chance: f64,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Copy)]
@@ -59,7 +59,7 @@ impl std::fmt::Display for Difficulty {
 fn init_difficulty_settings () {
 	use std::io::Write;
 
-	fn create_and_save_as_yaml(name: &str, enemy_base_attribute_points: i32, enemy_attack_chance: i32, enemy_heal_chance: i32, enemy_do_nothing_chance: i32, enemy_evade_chance: i32, player_base_attribute_points: i32, player_focus_chance: i32, player_evade_chance: i32) {
+	fn create_and_save_as_yaml(name: &str, enemy_base_attribute_points: i32, enemy_attack_chance: f64, enemy_heal_chance: f64, enemy_do_nothing_chance: f64, enemy_evade_chance: f64, player_base_attribute_points: i32, player_focus_chance: f64, player_evade_chance: f64) {
 		let difficulty_settings = DifficultySettings::new(enemy_base_attribute_points, enemy_attack_chance, enemy_heal_chance, enemy_do_nothing_chance, enemy_evade_chance, player_base_attribute_points, player_focus_chance, player_evade_chance);
 		let yaml = serde_yaml::to_string(&difficulty_settings).unwrap();
 		// create directories if they don't exist
@@ -68,21 +68,21 @@ fn init_difficulty_settings () {
 		file.write_all(yaml.as_bytes()).unwrap();
 	}
 
-	create_and_save_as_yaml("easy", 3, 30, 30, 40, 5, 10, 70, 10);
-	create_and_save_as_yaml("normal", 5, 45, 30, 25, 7, 7, 50, 7);
-	create_and_save_as_yaml("hard", 8, 60, 32, 8, 10, 5, 20, 5);
+	create_and_save_as_yaml("easy", 3, 0.30, 0.30, 0.40, 0.5, 10, 0.70, 0.10);
+	create_and_save_as_yaml("normal", 5, 0.45, 0.30, 0.25, 0.7, 7, 0.50, 0.7);
+	create_and_save_as_yaml("hard", 8, 0.60, 0.32, 0.8, 0.10, 5, 0.20, 0.5);
 }
 
 impl DifficultySettings {
 	pub fn new(
 		enemy_base_attribute_points: i32, 
-		enemy_attack_chance: i32, 
-		enemy_heal_chance: i32, 
-		enemy_do_nothing_chance: i32, 
-		enemy_evade_chance: i32, 
+		enemy_attack_chance: f64, 
+		enemy_heal_chance: f64, 
+		enemy_do_nothing_chance: f64, 
+		enemy_evade_chance: f64, 
 		player_base_attribute_points: i32, 
-		player_focus_chance: i32, 
-		player_evade_chance: i32
+		player_focus_chance: f64, 
+		player_evade_chance: f64
 	) -> DifficultySettings 
 	{
 		DifficultySettings {

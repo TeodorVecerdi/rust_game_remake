@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 pub const CHARACTER_TYPE_COUNT: usize = 5;
@@ -64,4 +65,41 @@ impl CharacterStats {
 	pub fn base_character_stats() -> &'static std::collections::HashMap<&'static str, CharacterStats> {
 		&BASE_STATS
 	}
+
+	pub fn random(rng: &mut rand::prelude::ThreadRng, max_points: i32) -> CharacterStats {
+		let mut vitality: i32 = 0;
+		let mut attack: i32 = 0;
+		let mut defense: i32 = 0;
+		let mut stamina: i32 = 0;
+	
+		for _ in 0..max_points {
+			let stat = rng.gen_range(0..=3);
+			match stat {
+				0 => vitality += 1,
+				1 => attack += 1,
+				2 => defense += 1,
+				_ => stamina += 1,
+			};
+		}
+	
+		CharacterStats {
+			vitality,
+			attack,
+			defense,
+			stamina
+		}
+	}
+}
+
+impl std::ops::Add<CharacterStats> for CharacterStats {
+    type Output = CharacterStats;
+
+    fn add(self, rhs: CharacterStats) -> Self::Output {
+        CharacterStats {
+			vitality: self.vitality + rhs.vitality,
+			attack: self.attack + rhs.attack,
+			defense: self.defense + rhs.defense,
+			stamina: self.stamina + rhs.stamina,
+		}
+    }
 }

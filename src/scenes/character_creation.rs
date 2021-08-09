@@ -386,7 +386,7 @@ impl Scene for CharacterCreation {
             .set(ids.button_randomize_stats, ui)
             .was_clicked()
         {
-            create_character_settings.assigned_stats = randomize_stats(&mut rng, difficulty_settings.player_base_attribute_points);
+            create_character_settings.assigned_stats = data::CharacterStats::random(&mut rng, difficulty_settings.player_base_attribute_points);
             scene_manager.wake_up_events_loop().unwrap_or_else(|e|eprintln!("Failed to wake up events loop: {}", e));
         }
 
@@ -424,30 +424,6 @@ impl Scene for CharacterCreation {
 
     fn reset_switch_request(&mut self) {
         self.next_scene_index = None;
-    }
-}
-
-fn randomize_stats(rng: &mut rand::prelude::ThreadRng, max_points: i32) -> data::CharacterStats {
-    let mut vitality: i32 = 0;
-    let mut attack: i32 = 0;
-    let mut defense: i32 = 0;
-    let mut stamina: i32 = 0;
-
-    for _ in 0..max_points {
-        let stat = rng.gen_range(0..=3);
-        match stat {
-            0 => vitality += 1,
-            1 => attack += 1,
-            2 => defense += 1,
-            _ => stamina += 1,
-        };
-    }
-
-    data::CharacterStats {
-        vitality,
-        attack,
-        defense,
-        stamina
     }
 }
 

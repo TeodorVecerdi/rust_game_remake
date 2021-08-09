@@ -1,9 +1,0 @@
----
-enemy_base_attribute_points: 8
-enemy_attack_chance: 60
-enemy_heal_chance: 32
-enemy_do_nothing_chance: 8
-enemy_evade_chance: 10
-player_base_attribute_points: 5
-player_focus_chance: 20
-player_evade_chance: 5

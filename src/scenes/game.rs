@@ -1,8 +1,15 @@
+mod actions;
+
 use crate::{Scene, SceneManager, data, generate_scene, math, theme};
+use actions::{
+    GameData, Character, PlayerAction, 
+};
 
-use conrod_core::{Borderable, Colorable, Labelable, Positionable, Sizeable, Ui, Widget, position::{Place, Align}, widget::{self, button}};
-
-use rand::Rng;
+use conrod_core::{
+    Borderable, Colorable, Labelable, Positionable, Sizeable, Ui, Widget, 
+    position::{Place, Align}, 
+    widget
+};
 
 widget_ids! {
     pub struct Ids {
@@ -87,10 +94,16 @@ impl Scene for Game {
         let ids = &self.ids;
 
         const PLAYER_HEALTH_TOTAL: f64 = 15.0;
+        const ENEMY_HEALTH_TOTAL: f64 = 32.0;
 
         if !data_store.has("player_health") {
             data_store.set("player_health", PLAYER_HEALTH_TOTAL);
             data_store.set("player_health_current", PLAYER_HEALTH_TOTAL);
+        }
+
+        if !data_store.has("enemy_health") {
+            data_store.set("enemy_health", ENEMY_HEALTH_TOTAL);
+            data_store.set("enemy_health_current", ENEMY_HEALTH_TOTAL);
         }
 
         let mut player_health = (*(*data_store.get_t::<f64>("player_health").unwrap())).clone();
@@ -102,6 +115,17 @@ impl Scene for Game {
         } else {
             player_health_current = player_health;
             data_store.set("player_health_current", player_health_current);
+        }
+
+        let mut enemy_health = (*(*data_store.get_t::<f64>("enemy_health").unwrap())).clone();
+        let mut enemy_health_current = (*(*data_store.get_t::<f64>("enemy_health_current").unwrap())).clone();
+        if math::abs(enemy_health - enemy_health_current) > 0.05 {
+            enemy_health_current = math::lerp(enemy_health_current,enemy_health, 0.05);
+            data_store.set("enemy_health_current", enemy_health_current);
+            scene_manager.wake_up_events_loop().unwrap_or_else(|e| eprintln!("Failed to wake up events loop: {}", e));
+        } else {
+            enemy_health_current = enemy_health;
+            data_store.set("enemy_health_current", enemy_health_current);
         }
 
         const HEALTHBAR_HEIGHT: f64 = 48.0;
@@ -249,7 +273,7 @@ impl Scene for Game {
         .x_place_on(ids.player_container, Place::Start(Some(player_image_width + STAT_WIDTH * 3.0 + PANEL_ELEMENT_MARGIN * 3.5)))
         .set(ids.player_stat_stamina_container, ui);
 
-        let base_button_player = widget::Button::new()
+        let base_button = widget::Button::new()
             .color(theme.button_normal)
             .hover_color(theme.button_hover)
             .press_color(theme.button_press)
@@ -260,7 +284,7 @@ impl Scene for Game {
             .label_font_id(*fonts.get("lato").unwrap())
             .label_color(theme.text_secondary);
 
-        if base_button_player.clone()
+        if base_button.clone()
             .label("ATTACK")
             .x_place_on(ids.player_container, Place::Start(Some(player_image_width + PANEL_ELEMENT_MARGIN * 2.0)))
             .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + STAT_HEIGHT + PANEL_ELEMENT_MARGIN * 3.0)))
@@ -270,7 +294,7 @@ impl Scene for Game {
             println!("Attack");
         }
 
-        if base_button_player.clone()
+        if base_button.clone()
             .label("FOCUS")
             .x_place_on(ids.player_container, Place::Start(Some(player_image_width + PANEL_ELEMENT_MARGIN * 2.0)))
             .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + STAT_HEIGHT + button_height + PANEL_ELEMENT_MARGIN * 3.5)))
@@ -280,7 +304,7 @@ impl Scene for Game {
             println!("Focus");
         }
 
-        if base_button_player.clone()
+        if base_button.clone()
             .label("HEAL")
             .x_place_on(ids.player_container, Place::Start(Some(player_image_width + PANEL_ELEMENT_MARGIN * 2.0)))
             .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + STAT_HEIGHT + button_height * 2.0 + PANEL_ELEMENT_MARGIN * 4.0)))
@@ -288,6 +312,139 @@ impl Scene for Game {
             .was_clicked()
         {
             println!("Heal");
+        }
+
+
+        
+        let enemy_image_id = images.get("soldier_idle").unwrap();
+        let (enemy_image_w, enemy_image_h) = image_map.get(enemy_image_id).unwrap().dimensions();
+        let enemy_image_ratio = enemy_image_w as f64 / enemy_image_h as f64;
+        let enemy_image_width = image_size * enemy_image_ratio;
+        let enemy_right_column_width = panel_width - enemy_image_width - PANEL_ELEMENT_MARGIN * 3.0;
+
+        // Enemy
+        widget::Canvas::new()
+            .color(theme.panel_dark)
+            .border(0.0)
+            .w_h(panel_width, panel_height - panel_title_height)
+            .top_right_with_margins_on(ids.root, ui.win_h / 2.0 + panel_title_height - panel_height / 2.0, PANEL_MARGIN)
+            .set(ids.enemy_container, ui);
+
+        widget::Text::new("Thinking...")
+            .color(theme.text_primary)
+            .font_size(32)
+            .font_id(*fonts.get("lato").unwrap())
+            .x_align_to(ids.enemy_container, Align::Start)
+            .y_place_on(ids.enemy_container, Place::End(Some(-44.0)))
+            .set(ids.enemy_text_status, ui);
+
+        widget::Text::new("Enemy Name")
+            .color(theme.text_primary)
+            .font_size(32)
+            .font_id(*fonts.get("lato").unwrap())
+            .x_align_to(ids.enemy_container, Align::End)
+            .y_place_on(ids.enemy_container, Place::End(Some(-44.0)))
+            .set(ids.enemy_text_name, ui);
+
+        widget::Image::new(*enemy_image_id)
+            .w_h(enemy_image_width, image_size)
+            .x_place_on(ids.enemy_container, Place::Start(Some(PANEL_ELEMENT_MARGIN)))
+            .y_place_on(ids.enemy_container, Place::Start(Some(PANEL_ELEMENT_MARGIN)))
+            .set(ids.enemy_image, ui);
+
+        healthbar (
+            enemy_health, 
+            enemy_health_current, 
+            ENEMY_HEALTH_TOTAL, 
+            enemy_right_column_width, 
+            HEALTHBAR_HEIGHT, 
+            ids.enemy_healthbar_background, 
+            ids.enemy_healthbar_fill, 
+            ids.enemy_healthbar_text, 
+            ui, 
+            theme, fonts
+        )
+        .y_place_on(ids.enemy_container, Place::End(Some(PANEL_ELEMENT_MARGIN)))
+        .x_place_on(ids.enemy_container, Place::Start(Some(enemy_image_width + PANEL_ELEMENT_MARGIN * 2.0)))
+        .set(ids.enemy_healthbar_background, ui);
+
+        stat (
+            1,
+            *vitality_id,
+            STAT_WIDTH,
+            STAT_HEIGHT,
+            PANEL_ELEMENT_MARGIN / 2.0,
+            ids.enemy_stat_vitality_container,
+            ids.enemy_stat_vitality_image,
+            ids.enemy_stat_vitality_text,
+            ui,
+            theme,
+            fonts
+        )
+        .y_place_on(ids.enemy_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
+        .x_place_on(ids.enemy_container, Place::Start(Some(enemy_image_width + PANEL_ELEMENT_MARGIN * 2.0)))
+        .set(ids.enemy_stat_vitality_container, ui);
+
+        stat (
+            2,
+            *attack_id,
+            STAT_WIDTH,
+            STAT_HEIGHT,
+            PANEL_ELEMENT_MARGIN / 2.0,
+            ids.enemy_stat_attack_container,
+            ids.enemy_stat_attack_image,
+            ids.enemy_stat_attack_text,
+            ui,
+            theme,
+            fonts
+        )
+        .y_place_on(ids.enemy_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
+        .x_place_on(ids.enemy_container, Place::Start(Some(enemy_image_width + STAT_WIDTH + PANEL_ELEMENT_MARGIN * 2.5)))
+        .set(ids.enemy_stat_attack_container, ui);
+
+        stat (
+            2,
+            *defense_id,
+            STAT_WIDTH,
+            STAT_HEIGHT,
+            PANEL_ELEMENT_MARGIN / 2.0,
+            ids.enemy_stat_defense_container,
+            ids.enemy_stat_defense_image,
+            ids.enemy_stat_defense_text,
+            ui,
+            theme,
+            fonts
+        )
+        .y_place_on(ids.enemy_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
+        .x_place_on(ids.enemy_container, Place::Start(Some(enemy_image_width + STAT_WIDTH * 2.0 + PANEL_ELEMENT_MARGIN * 3.0)))
+        .set(ids.enemy_stat_defense_container, ui);
+
+        stat (
+            1,
+            *stamina_id,
+            STAT_WIDTH,
+            STAT_HEIGHT,
+            PANEL_ELEMENT_MARGIN / 2.0,
+            ids.enemy_stat_stamina_container,
+            ids.enemy_stat_stamina_image,
+            ids.enemy_stat_stamina_text,
+            ui,
+            theme,
+            fonts
+        )
+        .y_place_on(ids.enemy_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
+        .x_place_on(ids.enemy_container, Place::Start(Some(enemy_image_width + STAT_WIDTH * 3.0 + PANEL_ELEMENT_MARGIN * 3.5)))
+        .set(ids.enemy_stat_stamina_container, ui);
+    
+        if base_button.clone()
+            .label("Flee Battle")
+            .w_h(256.0, 48.0)
+            .x_align_to(ids.player_container, Align::Start)
+            .y_place_on(ids.player_container, Place::Start(Some(-PANEL_ELEMENT_MARGIN - 48.0)))
+            .set(ids.button_flee, ui)
+            .was_clicked()
+        {
+            println!("Flee Battle");
         }
 
         /* 
