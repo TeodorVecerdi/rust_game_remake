@@ -56,12 +56,19 @@ pub struct GameData<'a, 'b> {
 
     difficulty_settings: DifficultySettings,
 
+    info_text: RefCell<Vec<String>>,
+
     #[serde(skip, default = "default_instant")]
     pub wait_for_enemy_timer: RefCell<Instant>,
     #[serde(skip, default = "default_instant")]
     pub player_status_timer: RefCell<Instant>,
     #[serde(skip, default = "default_instant")]
     pub enemy_status_timer: RefCell<Instant>,
+    #[serde(skip, default = "default_instant")]
+    pub player_state_timer: RefCell<Instant>,
+    #[serde(skip, default = "default_instant")]
+    pub enemy_state_timer: RefCell<Instant>,
+
 
     #[serde(borrow)]
     pub player: RefCell<Box<Character<'a>>>,
@@ -70,6 +77,16 @@ pub struct GameData<'a, 'b> {
 
     #[serde(skip)]
     rng: RefCell<rand::rngs::ThreadRng>,
+}
+
+impl CharacterState {
+    pub const fn image_id(&self) -> &str {
+        match self {
+            CharacterState::Idle => "idle",
+            CharacterState::Hurt => "hurt",
+            CharacterState::Attack => "attack",
+        }
+    }
 }
 
 impl<'a> Character<'a> {
@@ -95,7 +112,7 @@ impl<'a> Character<'a> {
             stats: self.stats,
             difficulty_settings: self.difficulty_settings,
             is_player: false,
-            rng: self.rng.clone(),
+            rng: self.rng,
         }
     }
 
@@ -175,6 +192,8 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
             false => Turn::Player,
         };
 
+        let enemy = GameData::make_enemy(difficulty_settings);
+
         let data = GameData {
             turn: RefCell::new(turn.clone()),
             enemies_killed: 0,
@@ -188,16 +207,20 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
 
             difficulty_settings,
 
+            info_text: RefCell::new(Vec::new()),
+
             wait_for_enemy_timer: RefCell::new(Instant::now()),
             player_status_timer: RefCell::new(Instant::now()),
             enemy_status_timer: RefCell::new(Instant::now()),
+            player_state_timer: RefCell::new(Instant::now()),
+            enemy_state_timer: RefCell::new(Instant::now()),
 
-            enemy: RefCell::new(Box::new(player.clone())),
+            enemy: RefCell::new(Box::new(enemy)),
             player: RefCell::new(Box::new(player)),
             rng: RefCell::new(rng),
         };
-
-        data.make_enemy();
+        
+        data.add_info_text(format!("~===== A wild {} appeared! =====~", data.enemy.borrow().name));
 
         data
     }
@@ -210,6 +233,8 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
         let is_player_status_timer_done = self.player_status_timer.borrow().saturating_duration_since(Instant::now()).is_zero();
         let is_enemy_status_timer_done = self.enemy_status_timer.borrow().saturating_duration_since(Instant::now()).is_zero();
         let is_wait_for_enemy_timer_done = self.wait_for_enemy_timer.borrow().saturating_duration_since(Instant::now()).is_zero();
+        let is_player_state_timer_done = self.player_state_timer.borrow().saturating_duration_since(Instant::now()).is_zero();
+        let is_enemy_state_timer_done = self.enemy_state_timer.borrow().saturating_duration_since(Instant::now()).is_zero();
         
         if turn == Turn::Player && !is_waiting_for_player {
             *self.waiting_for_player.borrow_mut() = true;
@@ -242,6 +267,14 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
             }
         }
 
+        if is_player_state_timer_done {
+            self.player.borrow_mut().state = CharacterState::Idle;
+        }
+
+        if is_enemy_state_timer_done {
+            self.enemy.borrow_mut().state = CharacterState::Idle;
+        }
+
         if is_waiting_for_enemy && is_wait_for_enemy_timer_done {
             *self.waiting_for_enemy.borrow_mut() = false;
             self.enemy_act();
@@ -250,7 +283,8 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
 
         if self.enemy.borrow().health <= 0 {
             println!("Enemy is dead!");
-            self.make_enemy();
+            *self.enemy.borrow_mut() = Box::new(GameData::make_enemy(self.difficulty_settings));
+            self.add_info_text(format!("~===== A wild {} appeared! =====~", self.enemy.borrow().name));
         }
 
         if self.player.borrow().health <= 0 {
@@ -260,19 +294,13 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
     
     pub fn player_act(&self, action: PlayerAction) {
         match action {
-            PlayerAction::Attack |
+            PlayerAction::Attack => {
+                self.player_act_attack();
+                *self.player_status_timer.borrow_mut() = Instant::now() + STATUS_EFFECT_TIME;
+            }
             PlayerAction::Heal => {
-                match action {
-                    PlayerAction::Attack => { 
-                        self.player_act_attack();
-                        *self.player_status_text.borrow_mut() = "Attacking!";
-                    },
-                    _ => { 
-                        self.player_act_heal();
-                        *self.player_status_text.borrow_mut() = "Healing!";
-                    }
-                };
-                
+                self.player_act_heal();
+                *self.player_status_text.borrow_mut() = "Healing!";    
                 *self.player_status_timer.borrow_mut() = Instant::now() + STATUS_EFFECT_TIME;
             },
             PlayerAction::Focus => {
@@ -292,9 +320,14 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
         *self.turn.borrow() == Turn::Enemy
     }
 
+    pub fn get_info_text(&self) -> &Vec<String> {
+        unsafe {&*self.info_text.as_ptr()}
+    }
+
     fn player_act_attack(&self) {
         self.player.borrow_mut().state = CharacterState::Attack;
-        self.enemy.borrow_mut().state = CharacterState::Hurt;
+        *self.player_state_timer.borrow_mut() = Instant::now() + Duration::from_secs_f64(self.rng.borrow_mut().gen_range(1.0..2.5));
+
 
         let is_player_focused = self.is_player_focused.borrow().clone();
         let mut attack_power = self.player.borrow().get_attack_power();
@@ -302,13 +335,26 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
             attack_power += self.rng.borrow_mut().gen_range(0 ..= attack_power / 2);
         }
 
-        let evaded = self.enemy.borrow_mut().take_damage(attack_power);
+        let mut evaded = self.enemy.borrow_mut().take_damage(attack_power);
         if evaded && is_player_focused {
-            self.enemy.borrow_mut().take_damage(attack_power);
+            evaded = self.enemy.borrow_mut().take_damage(attack_power);
+            if evaded {
+                *self.player_status_text.borrow_mut() = "Missed!";
+                self.add_info_text(format!("{} (you) tried to attack {}, but missed!", self.player.borrow().name, self.enemy.borrow().name));
+            }
+        } else if evaded {
+            *self.player_status_text.borrow_mut() = "Missed!";
+            self.add_info_text(format!("{} (you) tried to attack {}, but missed!", self.player.borrow().name, self.enemy.borrow().name));
+        } else {
+            *self.player_status_text.borrow_mut() = "Attacking!";
+            self.enemy.borrow_mut().state = CharacterState::Hurt;
+            *self.enemy_state_timer.borrow_mut() = Instant::now() + Duration::from_secs_f64(self.rng.borrow_mut().gen_range(1.0..2.5));
+            self.add_info_text(format!("{} (you) attacked {} for {} damage!", self.player.borrow().name, self.enemy.borrow().name, attack_power));
         }
 
         if is_player_focused {
             *self.is_player_focused.borrow_mut() = false;
+            self.add_info_text(format!("{} (you) is no longer focused.", self.player.borrow().name));
         }
     }
 
@@ -318,17 +364,21 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
         if is_player_focused {
             heal_power += self.rng.borrow_mut().gen_range(0 ..= heal_power / 2);
             *self.is_player_focused.borrow_mut() = false;
+            self.add_info_text(format!("{} (you) is no longer focused.", self.player.borrow().name));
         }
 
         self.player.borrow_mut().heal(heal_power);
+        self.add_info_text(format!("{} (you) healed for {}!", self.player.borrow().name, heal_power));
     }
 
     fn player_act_focus(&self) -> bool {
         if !self.rng.borrow_mut().gen_bool(self.difficulty_settings.player_focus_chance) {
+            self.add_info_text(format!("{} (you) tried to focus, but failed.", self.player.borrow().name));
             return false;
         }
 
         *self.is_player_focused.borrow_mut() = true;
+        self.add_info_text(format!("{} (you) successfully focused. Their next action will be twice as powerful.", self.player.borrow().name));
         true
     }
 
@@ -336,12 +386,19 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
         let chance: f64 = self.rng.borrow_mut().gen_range(0.0 .. 1.0);
         if chance < self.difficulty_settings.enemy_attack_chance {
             self.enemy.borrow_mut().state = CharacterState::Attack;
-            self.player.borrow_mut().state = CharacterState::Hurt;
+            *self.enemy_state_timer.borrow_mut() = Instant::now() + Duration::from_secs_f64(self.rng.borrow_mut().gen_range(1.0..2.5));
 
             let attack_power = self.enemy.borrow().get_attack_power();
-            self.player.borrow_mut().take_damage(attack_power);
-
-            *self.enemy_status_text.borrow_mut() = "Attacking!";
+            let evaded = self.player.borrow_mut().take_damage(attack_power);
+            if evaded {
+                *self.enemy_status_text.borrow_mut() = "Missed!";
+                self.add_info_text(format!("{} tried to attack {} (you), but missed!", self.enemy.borrow().name, self.player.borrow().name));
+            } else {
+                self.player.borrow_mut().state = CharacterState::Hurt;
+                *self.player_state_timer.borrow_mut() = Instant::now() + Duration::from_secs_f64(self.rng.borrow_mut().gen_range(1.0..2.5));
+                *self.enemy_status_text.borrow_mut() = "Attacking!";
+                self.add_info_text(format!("{} attacked {} (you) for {} damage!", self.enemy.borrow().name, self.player.borrow().name, attack_power));
+            }
             *self.enemy_status_timer.borrow_mut() = Instant::now() + STATUS_EFFECT_TIME;
         } else if chance < self.difficulty_settings.enemy_attack_chance + self.difficulty_settings.enemy_heal_chance {
             let heal_power = self.enemy.borrow().get_heal_power();
@@ -349,6 +406,7 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
 
             *self.enemy_status_text.borrow_mut() = "Healing!";
             *self.enemy_status_timer.borrow_mut() = Instant::now() + STATUS_EFFECT_TIME;
+            self.add_info_text(format!("{} healed for {}!", self.enemy.borrow().name, heal_power));
         } else {
             *self.enemy_status_text.borrow_mut() = "Trembling in fear!";
             *self.enemy_status_timer.borrow_mut() = Instant::now() + STATUS_EFFECT_TIME;
@@ -363,9 +421,18 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
         };
     }
 
-    fn make_enemy(&self) {
-        let enemy_assigned_stats = data::CharacterStats::random(&mut *self.rng.borrow_mut(), self.difficulty_settings.enemy_base_attribute_points);
-        let enemy_type_idx = self.rng.borrow_mut().gen_range(0..=data::CHARACTER_TYPE_COUNT);
+    fn add_info_text(&self, text: String) {
+        if self.info_text.borrow().len() == 10 {
+            self.info_text.borrow_mut().remove(0);
+        }
+
+        self.info_text.borrow_mut().push(text);
+    }
+
+    fn make_enemy(difficulty_settings: DifficultySettings) -> Character<'b> {
+        let mut rng = rand::thread_rng();
+        let enemy_assigned_stats = data::CharacterStats::random(&mut rng, difficulty_settings.enemy_base_attribute_points);
+        let enemy_type_idx = rng.gen_range(0..=data::CHARACTER_TYPE_COUNT);
         let (enemy_type, enemy_name) = match enemy_type_idx {
             0 => ("adventurer", "Enemy adventurer"),
             1 => ("female", "Enemy female"),
@@ -376,7 +443,7 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
         
         let enemy_stats = data::CharacterStats::base_character_stats()[enemy_type] + enemy_assigned_stats;
         
-        *self.enemy.borrow_mut() = Box::new(Character::new(enemy_name, enemy_type, enemy_stats, self.difficulty_settings.clone()));
+        Character::new(enemy_name, enemy_type, enemy_stats, difficulty_settings.clone()).as_enemy()
     }
 }
 

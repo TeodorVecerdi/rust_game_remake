@@ -52,7 +52,7 @@ impl std::fmt::Display for Difficulty {
 			Difficulty::Normal => "Normal",
 			Difficulty::Hard => "Hard",
 		};
-        write!(f, "Difficulty[{}]", display_name)
+        write!(f, "{} Difficulty", display_name)
     }
 }
 

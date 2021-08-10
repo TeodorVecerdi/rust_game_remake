@@ -2,7 +2,7 @@ pub mod actions;
 
 use crate::{Scene, SceneManager, data, generate_scene, math, theme};
 use actions::{
-    GameData, Character, PlayerAction, 
+    GameData, PlayerAction, 
 };
 
 use conrod_core::{
@@ -10,7 +10,7 @@ use conrod_core::{
     position::{Place, Align}, 
     widget
 };
-use std::cell::RefCell;
+use paste::paste;
 
 widget_ids! {
     pub struct Ids {
@@ -76,6 +76,29 @@ widget_ids! {
         enemy_stat_stamina_container,
         enemy_stat_stamina_image,
         enemy_stat_stamina_text,
+
+        // Console
+        console,
+        console_text_1,
+        console_text_2,
+        console_text_3,
+        console_text_4,
+        console_text_5,
+        console_text_6,
+        console_text_7,
+        console_text_8,
+        console_text_9,
+        console_text_10,
+        console_text_11,
+        console_text_12,
+        console_text_13,
+        console_text_14,
+        console_text_15,
+        console_text_16,
+        console_text_17,
+        console_text_18,
+        console_text_19,
+        console_text_20
     }
 }
 
@@ -178,7 +201,7 @@ impl Scene for Game {
         let image_size = panel_height - panel_title_height - PANEL_ELEMENT_MARGIN * 2.0;
         let button_height = (panel_height - panel_title_height - HEALTHBAR_HEIGHT - STAT_HEIGHT - PANEL_ELEMENT_MARGIN * 5.0) / 3.0;
         
-        let player_image_id = images.get(&format!("{}_idle", game_data.player.borrow().character_type)).unwrap();
+        let player_image_id = images.get(&format!("{}_{}", game_data.player.borrow().character_type, game_data.player.borrow().state.image_id())).unwrap();
         let (player_image_w, player_image_h) = image_map.get(player_image_id).unwrap().dimensions();
         let player_image_ratio = player_image_w as f64 / player_image_h as f64;
         let player_image_width = image_size * player_image_ratio;
@@ -195,7 +218,7 @@ impl Scene for Game {
             .color(theme.panel_dark)
             .border(0.0)
             .w_h(panel_width, panel_height - panel_title_height)
-            .top_left_with_margins_on(ids.root, ui.win_h / 2.0 + panel_title_height - panel_height / 2.0, PANEL_MARGIN)
+            .top_left_with_margins_on(ids.root, ui.win_h / 2.0 - panel_height, PANEL_MARGIN)
             .set(ids.player_container, ui);
 
         widget::Text::new(game_data.player.borrow().name)
@@ -336,16 +359,26 @@ impl Scene for Game {
                 game_data.player_act(PlayerAction::Attack);
             }
         }
-
-        if base_button.clone()
-            .label("FOCUS")
-            .x_place_on(ids.player_container, Place::Start(Some(player_image_width + PANEL_ELEMENT_MARGIN * 2.0)))
-            .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + STAT_HEIGHT + button_height + PANEL_ELEMENT_MARGIN * 3.5)))
-            .set(ids.player_act_focus, ui)
-            .was_clicked()
-        {
-            if !is_player_disabled {
-                game_data.player_act(PlayerAction::Focus);
+        if *game_data.is_player_focused.borrow() {
+            base_button.clone()
+                .label("FOCUS")
+                .x_place_on(ids.player_container, Place::Start(Some(player_image_width + PANEL_ELEMENT_MARGIN * 2.0)))
+                .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + STAT_HEIGHT + button_height + PANEL_ELEMENT_MARGIN * 3.5)))
+                .color(theme.button_disabled)
+                .hover_color(theme.button_disabled)
+                .press_color(theme.button_disabled)
+                .set(ids.player_act_focus, ui);
+        } else {
+            if base_button.clone()
+                .label("FOCUS")
+                .x_place_on(ids.player_container, Place::Start(Some(player_image_width + PANEL_ELEMENT_MARGIN * 2.0)))
+                .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + STAT_HEIGHT + button_height + PANEL_ELEMENT_MARGIN * 3.5)))
+                .set(ids.player_act_focus, ui)
+                .was_clicked()
+            {
+                if !is_player_disabled {
+                    game_data.player_act(PlayerAction::Focus);
+                }
             }
         }
 
@@ -363,7 +396,7 @@ impl Scene for Game {
 
 
         
-        let enemy_image_id = images.get(&format!("{}_idle", game_data.enemy.borrow().character_type)).unwrap();
+        let enemy_image_id = images.get(&format!("{}_{}", game_data.enemy.borrow().character_type, game_data.enemy.borrow().state.image_id())).unwrap();
         let (enemy_image_w, enemy_image_h) = image_map.get(enemy_image_id).unwrap().dimensions();
         let enemy_image_ratio = enemy_image_w as f64 / enemy_image_h as f64;
         let enemy_image_width = image_size * enemy_image_ratio;
@@ -374,7 +407,7 @@ impl Scene for Game {
             .color(theme.panel_dark)
             .border(0.0)
             .w_h(panel_width, panel_height - panel_title_height)
-            .top_right_with_margins_on(ids.root, ui.win_h / 2.0 + panel_title_height - panel_height / 2.0, PANEL_MARGIN)
+            .top_right_with_margins_on(ids.root, ui.win_h / 2.0 - panel_height, PANEL_MARGIN)
             .set(ids.enemy_container, ui);
 
         widget::Text::new(enemy_status)
@@ -487,12 +520,29 @@ impl Scene for Game {
             .label("Flee Battle")
             .w_h(256.0, 48.0)
             .x_align_to(ids.player_container, Align::Start)
-            .y_place_on(ids.player_container, Place::Start(Some(-PANEL_ELEMENT_MARGIN - 48.0)))
+            .y_place_on(ids.player_container, Place::End(Some(-PANEL_ELEMENT_MARGIN - 48.0)))
             .set(ids.button_flee, ui)
             .was_clicked()
         {
             println!("Flee Battle");
         }
+
+        console (
+            ids.console,
+            [
+                ids.console_text_1, ids.console_text_2, ids.console_text_3, ids.console_text_4, ids.console_text_5,
+                ids.console_text_6, ids.console_text_7, ids.console_text_8, ids.console_text_9, ids.console_text_10
+            ],
+            [panel_width * 2.0 + PANEL_SPACING * 2.0, panel_height + PANEL_SPACING],
+            game_data.get_info_text(),
+            ui,
+            theme,
+            fonts
+        )
+        .parent(ids.root)
+        .mid_top_with_margin_on(ids.root, ui.win_h / 2.0)
+        // .x_align(Align::Middle)
+        .set(ids.console, ui);
     }
 
     fn get_scene_switch_index(&self) -> Option<usize> {
@@ -568,4 +618,79 @@ fn stat (
         .set(text_id, ui);
 
     stat_widget
+}
+
+fn console (
+    console_id: widget::Id,
+    text_ids: [widget::Id; 10],
+    console_size: [f64; 2],
+    text: &Vec<String>,
+    ui: &mut conrod_core::UiCell, 
+    theme: &theme::Theme, 
+    fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>
+) -> widget::Rectangle
+{
+    let console_widget = widget::Rectangle::fill_with(console_size, theme.panel_dark);
+    let text_spacing = console_size[1] / 24.0;
+    if text.len() == 0 {
+        return console_widget;
+    }
+    console_text(
+        console_id,
+        console_id,
+        text_ids[0],
+        text.get(0).unwrap(),
+
+        text_spacing,
+        text_spacing,
+
+        ui,
+        theme,
+        fonts
+    );
+
+    for i in 1..10 {
+
+        if i >= text.len() {
+            break;
+        }
+        
+        console_text(
+            console_id,
+            text_ids[i-1],
+            text_ids[i],
+            text.get(i).unwrap(),
+    
+            text_spacing + 25.0,
+            text_spacing,
+    
+            ui,
+            theme,
+            fonts
+        );
+    }
+    console_widget
+}
+
+fn console_text (
+    console_id: widget::Id,
+    parent_id: widget::Id,
+    text_id: widget::Id,
+    text: &String,
+
+    top: f64,
+    left: f64,
+
+    ui: &mut conrod_core::UiCell,
+    theme: &theme::Theme,
+    fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>
+) {
+    widget::Text::new(&&text)
+        .font_size(24)
+        .font_id(*fonts.get("lato").unwrap())
+        .color(theme.text_primary)
+        .y_place_on(parent_id, Place::End(Some(top)))
+        .x_place_on(console_id, Place::Start(Some(left)))
+        .parent(parent_id)
+        .set(text_id, ui);
 }

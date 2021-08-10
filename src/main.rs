@@ -27,7 +27,6 @@ use std::collections::HashMap;
 use glium::Surface;
 use clap::{Arg, ArgSettings};
 use dark_light;
-use std::cell::RefCell;
 
 lazy_static! {
 	pub static ref ASSETS_FOLDER: std::path::PathBuf = find_folder::Search::ParentsThenKids(3, 5).for_folder("assets").unwrap();
@@ -168,7 +167,7 @@ fn main() {
 	scene_manager.set_starting_scene(SceneManager::MAIN_MENU);
 
 
-	let mut data_store = data::DataStore::new();
+	let data_store = data::DataStore::new();
 	let mut is_light_theme = false;
 	let mut theme_manager = ThemeManager::new();
 	match app_theme {

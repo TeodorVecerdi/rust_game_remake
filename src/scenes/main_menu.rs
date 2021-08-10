@@ -10,7 +10,6 @@ use conrod_core::{
 	widget,
 	Borderable, Colorable, Labelable, Positionable, Sizeable, Ui, UiCell, Widget, 
 };
-use std::cell::RefCell;
 
 widget_ids! {
 	pub struct Ids {
