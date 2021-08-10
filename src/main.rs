@@ -27,6 +27,7 @@ use std::collections::HashMap;
 use glium::Surface;
 use clap::{Arg, ArgSettings};
 use dark_light;
+use std::cell::RefCell;
 
 lazy_static! {
 	pub static ref ASSETS_FOLDER: std::path::PathBuf = find_folder::Search::ParentsThenKids(3, 5).for_folder("assets").unwrap();
@@ -76,9 +77,9 @@ fn get_args(args: clap::ArgMatches) -> (u32, u32, AppTheme, bool) {
 	let width = std::cmp::max(*resolution.get(0).unwrap(), 600);
 	let height = std::cmp::max(*resolution.get(1).unwrap(), 600);
 	let app_theme = match args.value_of("theme").unwrap() {
-		"auto" => AppTheme::Auto,
-		"dark" => AppTheme::Dark,
-		_ | "light" => AppTheme::Light,
+		"auto" 		=> AppTheme::Auto,
+		"dark" 		=> AppTheme::Dark,
+		"light" | _ => AppTheme::Light,
 	};
 	let fullscreen = args.is_present("fullscreen");
 
@@ -231,7 +232,7 @@ fn main() {
 
 		{
 			let ui_cell = &mut ui.set_widgets();
-			scene_manager.build(ui_cell, &images, &image_map, &fonts, &theme_manager, &mut data_store);
+			scene_manager.build(ui_cell, &images, &image_map, &fonts, &theme_manager, &data_store);
 		}
 
 

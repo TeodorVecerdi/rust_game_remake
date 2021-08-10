@@ -32,7 +32,7 @@ impl Scene for DifficultySelection {
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
 		scene_manager: &SceneManager,
 		theme: &theme::Theme,
-		data_store: &mut data::DataStore,
+		data_store: &data::DataStore,
 	) {
 		let ids = &self.ids;
 

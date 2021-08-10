@@ -68,9 +68,9 @@ fn init_difficulty_settings () {
 		file.write_all(yaml.as_bytes()).unwrap();
 	}
 
-	create_and_save_as_yaml("easy", 3, 0.30, 0.30, 0.40, 0.5, 10, 0.70, 0.10);
-	create_and_save_as_yaml("normal", 5, 0.45, 0.30, 0.25, 0.7, 7, 0.50, 0.7);
-	create_and_save_as_yaml("hard", 8, 0.60, 0.32, 0.8, 0.10, 5, 0.20, 0.5);
+	create_and_save_as_yaml("easy", 3, 0.3, 0.3, 0.4, 0.05, 1, 0.7, 0.01);
+	create_and_save_as_yaml("normal", 5, 0.45, 0.3, 0.25, 0.07, 7, 0.5, 0.07);
+	create_and_save_as_yaml("hard", 8, 0.6, 0.32, 0.08, 0.1, 5, 0.2, 0.05);
 }
 
 impl DifficultySettings {

@@ -1,0 +1,9 @@
+---
+enemy_base_attribute_points: 8
+enemy_attack_chance: 0.6
+enemy_heal_chance: 0.32
+enemy_do_nothing_chance: 0.08
+enemy_evade_chance: 0.1
+player_base_attribute_points: 5
+player_focus_chance: 0.2
+player_evade_chance: 0.05

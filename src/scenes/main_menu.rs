@@ -10,6 +10,7 @@ use conrod_core::{
 	widget,
 	Borderable, Colorable, Labelable, Positionable, Sizeable, Ui, UiCell, Widget, 
 };
+use std::cell::RefCell;
 
 widget_ids! {
 	pub struct Ids {
@@ -36,7 +37,7 @@ impl Scene for MainMenu {
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
 		scene_manager: &SceneManager,
 		theme: &theme::Theme,
-		data_store: &mut data::DataStore,
+		data_store: &data::DataStore,
 	) {
 		let ids = &self.ids;
 
@@ -80,8 +81,7 @@ impl Scene for MainMenu {
 			.press_color(theme.button_press)
 			.label_font_size(28)
 			.label_color(theme.text_secondary)
-			.label_font_id(*fonts.get("lato").unwrap())
-			;
+			.label_font_id(*fonts.get("lato").unwrap());
 
 		if base_button.clone() 
 			.label("Play")
@@ -132,7 +132,9 @@ impl Scene for MainMenu {
 			.set(ids.button_change_theme, ui)
 			.was_clicked()
 		{
-			data_store.set("should_toggle_theme", ());
+			{
+				data_store.set("should_toggle_theme", ());
+			}
 			scene_manager.wake_up_events_loop().unwrap_or_else(|e| eprintln!("wakeup error: {}", e));
 		}
 	}

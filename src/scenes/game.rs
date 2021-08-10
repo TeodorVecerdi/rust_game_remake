@@ -1,4 +1,4 @@
-mod actions;
+pub mod actions;
 
 use crate::{Scene, SceneManager, data, generate_scene, math, theme};
 use actions::{
@@ -10,6 +10,7 @@ use conrod_core::{
     position::{Place, Align}, 
     widget
 };
+use std::cell::RefCell;
 
 widget_ids! {
     pub struct Ids {
@@ -89,25 +90,53 @@ impl Scene for Game {
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
 		scene_manager: &SceneManager,
 		theme: &theme::Theme,
-		data_store: &mut data::DataStore,
+		data_store: &data::DataStore,
 	) {
         let ids = &self.ids;
 
-        const PLAYER_HEALTH_TOTAL: f64 = 15.0;
-        const ENEMY_HEALTH_TOTAL: f64 = 32.0;
+        let game_data: &mut GameData;
+        
+        let player_health: f64;
+        let player_max_health: f64;
+        let mut player_health_current: f64;
+        let player_stats: data::CharacterStats;
+        let player_status: &str;
+        
+        let enemy_health: f64;
+        let enemy_max_health: f64;
+        let mut enemy_health_current: f64;
+        let enemy_stats: data::CharacterStats;
+        let enemy_status: &str;
 
-        if !data_store.has("player_health") {
-            data_store.set("player_health", PLAYER_HEALTH_TOTAL);
-            data_store.set("player_health_current", PLAYER_HEALTH_TOTAL);
+        // Load data from DataStore
+        {
+            game_data = *data_store.get_mut_t::<GameData>("game_data").unwrap();
+            if !data_store.has("player_health_current") {
+                player_health_current = game_data.player.borrow().health as f64;
+                data_store.set("player_health_current", player_health_current);
+            } else {
+                player_health_current = **data_store.get_t("player_health_current").unwrap();
+            }
+
+            if !data_store.has("enemy_health_current") {
+                enemy_health_current = game_data.enemy.borrow().health as f64;
+                data_store.set("enemy_health_current", enemy_health_current);
+            } else {
+                enemy_health_current = **data_store.get_t("enemy_health_current").unwrap();
+            }
+
+            player_health = game_data.player.borrow().health as f64;
+            player_max_health = game_data.player.borrow().get_max_health() as f64;
+            player_stats = game_data.player.borrow().stats;
+            player_status = *game_data.player_status_text.borrow();
+            
+            enemy_health = game_data.enemy.borrow().health as f64;
+            enemy_max_health = game_data.enemy.borrow().get_max_health() as f64;
+            enemy_stats = game_data.enemy.borrow().stats;
+            enemy_status = *game_data.enemy_status_text.borrow();
         }
 
-        if !data_store.has("enemy_health") {
-            data_store.set("enemy_health", ENEMY_HEALTH_TOTAL);
-            data_store.set("enemy_health_current", ENEMY_HEALTH_TOTAL);
-        }
-
-        let mut player_health = (*(*data_store.get_t::<f64>("player_health").unwrap())).clone();
-        let mut player_health_current = (*(*data_store.get_t::<f64>("player_health_current").unwrap())).clone();
+        // Update healthbars
         if math::abs(player_health - player_health_current) > 0.05 {
             player_health_current = math::lerp(player_health_current,player_health, 0.05);
             data_store.set("player_health_current", player_health_current);
@@ -115,10 +144,9 @@ impl Scene for Game {
         } else {
             player_health_current = player_health;
             data_store.set("player_health_current", player_health_current);
+            scene_manager.wake_up_events_loop().unwrap_or_else(|e| eprintln!("Failed to wake up events loop: {}", e));
         }
 
-        let mut enemy_health = (*(*data_store.get_t::<f64>("enemy_health").unwrap())).clone();
-        let mut enemy_health_current = (*(*data_store.get_t::<f64>("enemy_health_current").unwrap())).clone();
         if math::abs(enemy_health - enemy_health_current) > 0.05 {
             enemy_health_current = math::lerp(enemy_health_current,enemy_health, 0.05);
             data_store.set("enemy_health_current", enemy_health_current);
@@ -126,7 +154,10 @@ impl Scene for Game {
         } else {
             enemy_health_current = enemy_health;
             data_store.set("enemy_health_current", enemy_health_current);
+            scene_manager.wake_up_events_loop().unwrap_or_else(|e| eprintln!("Failed to wake up events loop: {}", e));
         }
+
+        game_data.update();
 
         const HEALTHBAR_HEIGHT: f64 = 48.0;
         const STAT_HEIGHT: f64 = 96.0;
@@ -147,7 +178,7 @@ impl Scene for Game {
         let image_size = panel_height - panel_title_height - PANEL_ELEMENT_MARGIN * 2.0;
         let button_height = (panel_height - panel_title_height - HEALTHBAR_HEIGHT - STAT_HEIGHT - PANEL_ELEMENT_MARGIN * 5.0) / 3.0;
         
-        let player_image_id = images.get("player_idle").unwrap();
+        let player_image_id = images.get(&format!("{}_idle", game_data.player.borrow().character_type)).unwrap();
         let (player_image_w, player_image_h) = image_map.get(player_image_id).unwrap().dimensions();
         let player_image_ratio = player_image_w as f64 / player_image_h as f64;
         let player_image_width = image_size * player_image_ratio;
@@ -167,7 +198,7 @@ impl Scene for Game {
             .top_left_with_margins_on(ids.root, ui.win_h / 2.0 + panel_title_height - panel_height / 2.0, PANEL_MARGIN)
             .set(ids.player_container, ui);
 
-        widget::Text::new("Player Name")
+        widget::Text::new(game_data.player.borrow().name)
             .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
@@ -175,7 +206,7 @@ impl Scene for Game {
             .y_place_on(ids.player_container, Place::End(Some(-44.0)))
             .set(ids.player_text_name, ui);
 
-        widget::Text::new("Thinking...")
+        widget::Text::new(player_status)
             .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
@@ -192,7 +223,7 @@ impl Scene for Game {
         healthbar (
             player_health, 
             player_health_current, 
-            PLAYER_HEALTH_TOTAL, 
+            player_max_health, 
             player_right_column_width, 
             HEALTHBAR_HEIGHT, 
             ids.player_healthbar_background, 
@@ -206,7 +237,7 @@ impl Scene for Game {
         .set(ids.player_healthbar_background, ui);
 
         stat (
-            1,
+            player_stats.vitality,
             *vitality_id,
             STAT_WIDTH,
             STAT_HEIGHT,
@@ -223,7 +254,7 @@ impl Scene for Game {
         .set(ids.player_stat_vitality_container, ui);
 
         stat (
-            2,
+            player_stats.attack,
             *attack_id,
             STAT_WIDTH,
             STAT_HEIGHT,
@@ -240,7 +271,7 @@ impl Scene for Game {
         .set(ids.player_stat_attack_container, ui);
 
         stat (
-            2,
+            player_stats.defense,
             *defense_id,
             STAT_WIDTH,
             STAT_HEIGHT,
@@ -257,7 +288,7 @@ impl Scene for Game {
         .set(ids.player_stat_defense_container, ui);
 
         stat (
-            1,
+            player_stats.stamina,
             *stamina_id,
             STAT_WIDTH,
             STAT_HEIGHT,
@@ -273,16 +304,26 @@ impl Scene for Game {
         .x_place_on(ids.player_container, Place::Start(Some(player_image_width + STAT_WIDTH * 3.0 + PANEL_ELEMENT_MARGIN * 3.5)))
         .set(ids.player_stat_stamina_container, ui);
 
-        let base_button = widget::Button::new()
-            .color(theme.button_normal)
-            .hover_color(theme.button_hover)
-            .press_color(theme.button_press)
+        let mut base_button = widget::Button::new()
             .h(button_height)
             .w(player_right_column_width)
             .border(0.0)
             .label_font_size(24)
             .label_font_id(*fonts.get("lato").unwrap())
             .label_color(theme.text_secondary);
+
+        let is_player_disabled = game_data.should_disable_player_controls();
+        if is_player_disabled {
+            base_button = base_button
+                .color(theme.button_disabled)
+                .hover_color(theme.button_disabled)
+                .press_color(theme.button_disabled)
+        } else {
+            base_button = base_button
+                .color(theme.button_normal)
+                .hover_color(theme.button_hover)
+                .press_color(theme.button_press)
+        }
 
         if base_button.clone()
             .label("ATTACK")
@@ -291,7 +332,9 @@ impl Scene for Game {
             .set(ids.player_act_attack, ui)
             .was_clicked()
         {
-            println!("Attack");
+            if !is_player_disabled {
+                game_data.player_act(PlayerAction::Attack);
+            }
         }
 
         if base_button.clone()
@@ -301,7 +344,9 @@ impl Scene for Game {
             .set(ids.player_act_focus, ui)
             .was_clicked()
         {
-            println!("Focus");
+            if !is_player_disabled {
+                game_data.player_act(PlayerAction::Focus);
+            }
         }
 
         if base_button.clone()
@@ -311,12 +356,14 @@ impl Scene for Game {
             .set(ids.player_act_heal, ui)
             .was_clicked()
         {
-            println!("Heal");
+            if !is_player_disabled {
+                game_data.player_act(PlayerAction::Heal);
+            }
         }
 
 
         
-        let enemy_image_id = images.get("soldier_idle").unwrap();
+        let enemy_image_id = images.get(&format!("{}_idle", game_data.enemy.borrow().character_type)).unwrap();
         let (enemy_image_w, enemy_image_h) = image_map.get(enemy_image_id).unwrap().dimensions();
         let enemy_image_ratio = enemy_image_w as f64 / enemy_image_h as f64;
         let enemy_image_width = image_size * enemy_image_ratio;
@@ -330,7 +377,7 @@ impl Scene for Game {
             .top_right_with_margins_on(ids.root, ui.win_h / 2.0 + panel_title_height - panel_height / 2.0, PANEL_MARGIN)
             .set(ids.enemy_container, ui);
 
-        widget::Text::new("Thinking...")
+        widget::Text::new(enemy_status)
             .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
@@ -338,7 +385,7 @@ impl Scene for Game {
             .y_place_on(ids.enemy_container, Place::End(Some(-44.0)))
             .set(ids.enemy_text_status, ui);
 
-        widget::Text::new("Enemy Name")
+        widget::Text::new(game_data.enemy.borrow().name)
             .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
@@ -355,7 +402,7 @@ impl Scene for Game {
         healthbar (
             enemy_health, 
             enemy_health_current, 
-            ENEMY_HEALTH_TOTAL, 
+            enemy_max_health,  
             enemy_right_column_width, 
             HEALTHBAR_HEIGHT, 
             ids.enemy_healthbar_background, 
@@ -369,7 +416,7 @@ impl Scene for Game {
         .set(ids.enemy_healthbar_background, ui);
 
         stat (
-            1,
+            enemy_stats.vitality,
             *vitality_id,
             STAT_WIDTH,
             STAT_HEIGHT,
@@ -386,7 +433,7 @@ impl Scene for Game {
         .set(ids.enemy_stat_vitality_container, ui);
 
         stat (
-            2,
+            enemy_stats.attack,
             *attack_id,
             STAT_WIDTH,
             STAT_HEIGHT,
@@ -403,7 +450,7 @@ impl Scene for Game {
         .set(ids.enemy_stat_attack_container, ui);
 
         stat (
-            2,
+            enemy_stats.defense,
             *defense_id,
             STAT_WIDTH,
             STAT_HEIGHT,
@@ -420,7 +467,7 @@ impl Scene for Game {
         .set(ids.enemy_stat_defense_container, ui);
 
         stat (
-            1,
+            enemy_stats.stamina,
             *stamina_id,
             STAT_WIDTH,
             STAT_HEIGHT,
@@ -446,54 +493,6 @@ impl Scene for Game {
         {
             println!("Flee Battle");
         }
-
-        /* 
-
-        if widget::Button::new()
-            .color(theme.button_normal)
-            .hover_color(theme.button_hover)
-            .press_color(theme.button_pressed)
-            .h(48.0)
-            .w(160.0)
-            .border(0.0)
-            .y_align_to(ids.root, Align::Start)
-            .x_align_to(ids.root, Align::Start)
-            .label("Increase")
-            .label_font_size(24)
-            .label_font_id(*fonts.get("lato").unwrap())
-            .label_color(theme.secondary_text)
-            .set(ids.player_act_attack, ui) 
-            .was_clicked() 
-        {
-            player_health += 1.0;
-            if player_health > PLAYER_HEALTH_TOTAL {
-                player_health = PLAYER_HEALTH_TOTAL;
-            }
-            data_store.set("player_health", player_health);
-        }
-
-        if widget::Button::new()
-            .color(theme.button_normal)
-            .hover_color(theme.button_hover)
-            .press_color(theme.button_pressed)
-            .h(48.0)
-            .w(160.0)
-            .border(0.0)
-            .y_align_to(ids.root, Align::Start)
-            .x_align_to(ids.root, Align::End)
-            .label("Decrease")
-            .label_font_size(24)
-            .label_font_id(*fonts.get("lato").unwrap())
-            .label_color(theme.secondary_text)
-            .set(ids.player_act_focus, ui) 
-            .was_clicked() 
-        {
-            player_health -= 1.0;
-            if player_health < 0.0 {
-                player_health = 0.0;
-            }
-            data_store.set("player_health", player_health);
-        } */
     }
 
     fn get_scene_switch_index(&self) -> Option<usize> {
@@ -537,7 +536,7 @@ fn healthbar(
 }
 
 fn stat (
-    stat_value: u32,
+    stat_value: i32,
     stat_image_id: conrod_core::image::Id,
     stat_width: f64,
     stat_height: f64,

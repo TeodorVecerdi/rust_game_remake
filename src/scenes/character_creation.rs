@@ -2,6 +2,7 @@ use crate::{
     Scene, SceneManager, 
     generate_scene,
     data, theme,
+    scenes::game::actions::{GameData, Character}
 };
 
 use conrod_core::{
@@ -61,7 +62,7 @@ impl Scene for CharacterCreation {
 		fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>, 
 		scene_manager: &SceneManager,
 		theme: &theme::Theme,
-		data_store: &mut data::DataStore,
+		data_store: &data::DataStore,
 	) {
         let ids = &self.ids;
         let mut rng = rand::thread_rng();
@@ -77,7 +78,7 @@ impl Scene for CharacterCreation {
         let base_character_stats: data::CharacterStats;
         {
             difficulty_settings = *data::DifficultySettings::difficulty_settings().get(data_store.get_t::<data::Difficulty>("difficulty").unwrap().as_str()).unwrap();
-            create_character_settings = *data_store.get_mut_t::<CreateCharacterSettings>("create_character_settings").unwrap();
+            create_character_settings = *data_store.get_mut_t::<CreateCharacterSettings>("create_character_settings").unwrap(); 
             base_character_stats = *data::CharacterStats::base_character_stats().get(data::ALL_CHARACTER_TYPES[create_character_settings.character_type]).unwrap();
         }
          
@@ -411,6 +412,15 @@ impl Scene for CharacterCreation {
             .set(ids.button_create, ui)
             .was_clicked()
         {
+            let player = Character::new(
+                data::ALL_CHARACTER_NAMES[create_character_settings.name], 
+                character_type, 
+                base_character_stats + create_character_settings.assigned_stats, 
+                difficulty_settings.clone()
+            );
+            let game_data = GameData::new(player, difficulty_settings.clone());
+            data_store.set("game_data", game_data);
+            data_store.remove("create_character_settings");
             self.next_scene_index = Some(SceneManager::GAME);
         }
 

@@ -113,6 +113,9 @@ impl<'a> Character<'a> {
 
     pub fn get_defense_power(&self) -> i32 {
         let mut power = self.rng.borrow_mut().gen_range(self.stats.defense-2..=self.stats.defense+2);
+        if power <= 0 {
+            power = 1;
+        }
         power
     }
 
@@ -131,7 +134,7 @@ impl<'a> Character<'a> {
         };
 
         let mut evaded = false;
-        for _ in 0..self.stats.defense {
+        for _ in 0..self.get_defense_power() {
             evaded |= self.rng.borrow_mut().gen_bool(chance);
             if evaded {
                 break;
@@ -142,10 +145,12 @@ impl<'a> Character<'a> {
 
     pub fn take_damage(&mut self, damage: i32) -> bool {
         if self.can_evade() {
+            println!("{} evaded the attack!", self.name);
             return true;
         }
 
         self.health -= damage;
+        println!("{} took {} damage", self.name, damage);
         if self.health <= 0 {
             self.health = 0;
         }
@@ -162,15 +167,15 @@ impl<'a> Character<'a> {
     }
 }
 
-impl<'a, 'b> GameData<'a, 'b> {
-    pub fn new(player: Character<'a>, enemy: Character<'b>, difficulty_settings: DifficultySettings) -> GameData<'a, 'b> {
+impl<'a: 'b, 'b> GameData<'a, 'b> {
+    pub fn new(player: Character<'a>, difficulty_settings: DifficultySettings) -> GameData<'a, 'b> {
         let mut rng = rand::thread_rng();
         let turn = match rng.gen_bool(0.5) {
             true => Turn::Enemy,
             false => Turn::Player,
         };
 
-        GameData {
+        let data = GameData {
             turn: RefCell::new(turn.clone()),
             enemies_killed: 0,
             is_player_focused: RefCell::new(false),
@@ -187,10 +192,14 @@ impl<'a, 'b> GameData<'a, 'b> {
             player_status_timer: RefCell::new(Instant::now()),
             enemy_status_timer: RefCell::new(Instant::now()),
 
+            enemy: RefCell::new(Box::new(player.clone())),
             player: RefCell::new(Box::new(player)),
-            enemy: RefCell::new(Box::new(enemy)),
             rng: RefCell::new(rng),
-        }
+        };
+
+        data.make_enemy();
+
+        data
     }
 
     pub fn update(&self) {
@@ -240,11 +249,12 @@ impl<'a, 'b> GameData<'a, 'b> {
         }
 
         if self.enemy.borrow().health <= 0 {
-            todo!("Enemyis dead!");
+            println!("Enemy is dead!");
+            self.make_enemy();
         }
 
         if self.player.borrow().health <= 0 {
-            todo!("Player is dead!");
+            println!("Player is dead!");
         }
     }
     

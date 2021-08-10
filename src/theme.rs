@@ -214,18 +214,22 @@ macro_rules! make_color {
 }
 
 // alias for color highlighter
+#[allow(dead_code)]
 pub const fn rgb(r: u8, g: u8, b: u8) -> Color {
     make_color!(r, g, b)
 }
 
+#[allow(dead_code)]
 pub const fn rgba(r: u8, g: u8, b: u8, a: u8) -> Color {
     make_color!(r, g, b, a)
 }
 
+#[allow(dead_code)]
 pub const fn rgbi(color: u32) -> Color {
     make_color!((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
 }
 
+#[allow(dead_code)]
 pub const fn rgbai(color: u32) -> Color {
     make_color!((color >> 24) & 0xFF, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
 }
