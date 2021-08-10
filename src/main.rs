@@ -139,6 +139,11 @@ fn get_display(events_loop: &glium::glutin::EventsLoop, width: u32, height: u32,
 
 
 fn main() {
+	todo!("Read what tasks are left to do!");
+	// TODO: 
+	// - [ ] Handle player death (with a game over scene)
+	// - [ ] Player level-up and attribute assigning (can copy existing scene and just change a few things)
+
 	let (width, height, app_theme, fullscreen) = get_args(get_cli_options());
 
 	let mut events_loop = glium::glutin::EventsLoop::new();
