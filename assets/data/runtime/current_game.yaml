@@ -1,0 +1,71 @@
+---
+turn: Player
+enemies_killed: 3
+is_player_focused: false
+waiting_for_player: true
+waiting_for_enemy: false
+player_status_text: Thinking...
+enemy_status_text: ""
+difficulty_settings:
+  enemy_base_attribute_points: 3
+  enemy_attack_chance: 0.3
+  enemy_heal_chance: 0.3
+  enemy_do_nothing_chance: 0.4
+  enemy_evade_chance: 0.05
+  player_base_attribute_points: 10
+  player_focus_chance: 0.7
+  player_evade_chance: 0.1
+  difficulty: Easy
+info_text:
+  - ~===== A wild Enemy soldier appeared! =====~
+  - Richard (you) attacked Enemy soldier for 5 damage!
+  - ~===== A wild Enemy soldier appeared! =====~
+  - Richard (you) attacked Enemy soldier for 8 damage!
+  - Enemy soldier healed for 1!
+  - Richard (you) attacked Enemy soldier for 7 damage!
+  - ~===== A wild Enemy adventurer appeared! =====~
+  - Enemy adventurer healed for 3!
+  - Richard (you) attacked Enemy adventurer for 5 damage!
+  - Enemy adventurer attacked Richard (you) for 1 damage!
+player:
+  name: Richard
+  character_type: female
+  state: Idle
+  health: 29
+  stats:
+    vitality: 6
+    attack: 7
+    defense: 1
+    stamina: 2
+  difficulty_settings:
+    enemy_base_attribute_points: 3
+    enemy_attack_chance: 0.3
+    enemy_heal_chance: 0.3
+    enemy_do_nothing_chance: 0.4
+    enemy_evade_chance: 0.05
+    player_base_attribute_points: 10
+    player_focus_chance: 0.7
+    player_evade_chance: 0.1
+    difficulty: Easy
+  is_player: true
+enemy:
+  name: Enemy adventurer
+  character_type: adventurer
+  state: Attack
+  health: 10
+  stats:
+    vitality: 3
+    attack: 1
+    defense: 2
+    stamina: 3
+  difficulty_settings:
+    enemy_base_attribute_points: 3
+    enemy_attack_chance: 0.3
+    enemy_heal_chance: 0.3
+    enemy_do_nothing_chance: 0.4
+    enemy_evade_chance: 0.05
+    player_base_attribute_points: 10
+    player_focus_chance: 0.7
+    player_evade_chance: 0.1
+    difficulty: Easy
+  is_player: false

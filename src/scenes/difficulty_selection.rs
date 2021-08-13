@@ -53,7 +53,6 @@ impl Scene for DifficultySelection {
 			.set(ids.root, ui);
 
 		widget::Text::new("Select difficulty")
-			.font_id(*fonts.get("lato").unwrap())
 			.color(theme.text_primary)
 			.align_middle_y_of(ids.root)
 			.align_middle_x()
@@ -72,8 +71,7 @@ impl Scene for DifficultySelection {
 			.border(0.0)
 			.label_font_size(24)
 			.label_color(theme.text_secondary)
-			.label_font_id(*fonts.get("lato").unwrap())
-			;
+			.label_font_id(*fonts.get("lato").unwrap());
 		
 		if base_button.clone()
 			.label("Easy")
@@ -117,7 +115,6 @@ impl Scene for DifficultySelection {
 			.set(ids.back, ui)
 			.was_clicked()
 		{
-			println!("Back");
 			self.next_scene_index = Some(SceneManager::MAIN_MENU);
 		}
 	}

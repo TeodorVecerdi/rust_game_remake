@@ -4,6 +4,7 @@ mod main_menu;
 mod difficulty_selection;
 mod character_creation;
 mod game;
+mod game_over;
 #[macro_use] mod macros;
 
 use std::cell::RefCell;
@@ -18,6 +19,7 @@ pub use main_menu::MainMenu;
 pub use difficulty_selection::DifficultySelection;
 pub use character_creation::CharacterCreation;
 pub use game::Game;
+pub use game_over::GameOver;
 
 pub trait Scene {
 	fn get_scene_switch_index(&self) -> Option<usize>;
@@ -40,7 +42,7 @@ pub struct SceneManager<'a> {
 	events_loop_proxy: &'a glium::glutin::EventsLoopProxy,
 }
 
-generate_scene_collection!(MainMenu, DifficultySelection, CharacterCreation, Game);
+generate_scene_collection!(MainMenu, DifficultySelection, CharacterCreation, Game, GameOver);
 
 #[allow(dead_code)]
 impl<'a> SceneManager<'a> {

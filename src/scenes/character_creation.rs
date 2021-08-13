@@ -413,8 +413,8 @@ impl Scene for CharacterCreation {
             .was_clicked()
         {
             let player = Character::new(
-                data::ALL_CHARACTER_NAMES[create_character_settings.name], 
-                character_type, 
+                data::ALL_CHARACTER_NAMES[create_character_settings.name].to_string(), 
+                character_type.to_string(),
                 base_character_stats + create_character_settings.assigned_stats, 
                 difficulty_settings.clone()
             );

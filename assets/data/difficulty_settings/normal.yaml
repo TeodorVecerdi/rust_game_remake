@@ -7,3 +7,4 @@ enemy_evade_chance: 0.07
 player_base_attribute_points: 7
 player_focus_chance: 0.5
 player_evade_chance: 0.07
+difficulty: Normal

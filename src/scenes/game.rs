@@ -1,6 +1,6 @@
 pub mod actions;
 
-use crate::{Scene, SceneManager, data, generate_scene, math, theme};
+use crate::{Scene, SceneManager, data::{self, LeaderboardEntry}, generate_scene, math, scenes::game::actions::GameUpdateResult, theme};
 use actions::{
     GameData, PlayerAction, 
 };
@@ -123,13 +123,13 @@ impl Scene for Game {
         let player_max_health: f64;
         let mut player_health_current: f64;
         let player_stats: data::CharacterStats;
-        let player_status: &str;
+        let player_status: String;
         
         let enemy_health: f64;
         let enemy_max_health: f64;
         let mut enemy_health_current: f64;
         let enemy_stats: data::CharacterStats;
-        let enemy_status: &str;
+        let enemy_status: String;
 
         // Load data from DataStore
         {
@@ -151,12 +151,12 @@ impl Scene for Game {
             player_health = game_data.player.borrow().health as f64;
             player_max_health = game_data.player.borrow().get_max_health() as f64;
             player_stats = game_data.player.borrow().stats;
-            player_status = *game_data.player_status_text.borrow();
+            player_status = game_data.player_status_text.borrow().clone();
             
             enemy_health = game_data.enemy.borrow().health as f64;
             enemy_max_health = game_data.enemy.borrow().get_max_health() as f64;
             enemy_stats = game_data.enemy.borrow().stats;
-            enemy_status = *game_data.enemy_status_text.borrow();
+            enemy_status = game_data.enemy_status_text.borrow().clone();
         }
 
         // Update healthbars
@@ -180,7 +180,19 @@ impl Scene for Game {
             scene_manager.wake_up_events_loop().unwrap_or_else(|e| eprintln!("Failed to wake up events loop: {}", e));
         }
 
-        game_data.update();
+        if let Some(result) = game_data.update() {
+            match result {
+                GameUpdateResult::PlayerKilled => {
+                    let leaderboard_entry = LeaderboardEntry::new(String::from(game_data.player.borrow().name.clone()), game_data.enemies_killed.borrow().clone(), game_data.difficulty_settings.difficulty.clone());
+                    data_store.set("leaderboard_entry", leaderboard_entry);
+                    data_store.remove("game_data");
+                    self.next_scene_index = Some(SceneManager::GAME_OVER);
+                    scene_manager.wake_up_events_loop().unwrap_or_else(|e|eprintln!("Failed to wake up events loop: {}", e));
+                    return;
+                }
+                _ => {}
+            }
+        }
 
         const HEALTHBAR_HEIGHT: f64 = 48.0;
         const STAT_HEIGHT: f64 = 96.0;
@@ -218,7 +230,7 @@ impl Scene for Game {
             .top_left_with_margins_on(ids.root, ui.win_h / 2.0 - panel_height + PANEL_MARGIN, PANEL_MARGIN)
             .set(ids.player_container, ui);
 
-        widget::Text::new(game_data.player.borrow().name)
+        widget::Text::new(&game_data.player.borrow().name)
             .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
@@ -226,7 +238,7 @@ impl Scene for Game {
             .y_place_on(ids.player_container, Place::End(Some(-44.0)))
             .set(ids.player_text_name, ui);
 
-        widget::Text::new(player_status)
+        widget::Text::new(&player_status)
             .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
@@ -402,7 +414,7 @@ impl Scene for Game {
             .top_right_with_margins_on(ids.root, ui.win_h / 2.0 - panel_height + PANEL_MARGIN, PANEL_MARGIN)
             .set(ids.enemy_container, ui);
 
-        widget::Text::new(enemy_status)
+        widget::Text::new(&enemy_status)
             .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
@@ -410,7 +422,7 @@ impl Scene for Game {
             .y_place_on(ids.enemy_container, Place::End(Some(-44.0)))
             .set(ids.enemy_text_status, ui);
 
-        widget::Text::new(game_data.enemy.borrow().name)
+        widget::Text::new(&game_data.enemy.borrow().name)
             .color(theme.text_primary)
             .font_size(32)
             .font_id(*fonts.get("lato").unwrap())
@@ -507,7 +519,7 @@ impl Scene for Game {
         .y_place_on(ids.enemy_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
         .x_place_on(ids.enemy_container, Place::Start(Some(image_size + STAT_WIDTH * 3.0 + PANEL_ELEMENT_MARGIN * 3.5)))
         .set(ids.enemy_stat_stamina_container, ui);
-    
+        
         if base_button.clone()
             .label("Flee Battle")
             .w_h(256.0, 48.0)
@@ -516,6 +528,9 @@ impl Scene for Game {
             .set(ids.button_flee, ui)
             .was_clicked()
         {
+            let file = std::fs::File::create(crate::ASSETS_FOLDER.join("data/runtime/current_game.yaml")).unwrap();
+            serde_yaml::to_writer(file, game_data).unwrap();
+
             data_store.remove("game_data");
             data_store.remove("player_health_current");
             data_store.remove("enemy_health_current");

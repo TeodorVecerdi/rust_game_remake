@@ -23,7 +23,8 @@ pub use data_store
 mod leaderboard;
 pub use leaderboard
 :: {
-	Leaderboard
+	Leaderboard,
+	LeaderboardEntry,
 };
 
 pub use super::ASSETS_FOLDER;

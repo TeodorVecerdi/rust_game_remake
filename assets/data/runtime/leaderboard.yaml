@@ -1,0 +1,15 @@
+---
+capacity: 10
+entries:
+  - name: Sammie
+    score: 0
+    difficulty: Hard
+  - name: Alfonso
+    score: 5
+    difficulty: Normal
+  - name: Robby
+    score: 4
+    difficulty: Normal
+  - name: Riley
+    score: 0
+    difficulty: Normal

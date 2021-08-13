@@ -1,3 +1,6 @@
+use std::time::{Duration, Instant};
+
+use crate::scenes::game::actions::{CharacterState, GameData, Turn};
 use crate::{
 	Scene, SceneManager,
 	generate_scene,
@@ -17,7 +20,8 @@ widget_ids! {
 		
 		title,
 		button_play,
-		button_options,
+		button_continue,
+		button_erase_data,
 		button_quit,
 
 		button_change_theme,
@@ -40,20 +44,17 @@ impl Scene for MainMenu {
 	) {
 		let ids = &self.ids;
 
-		if data_store.has("difficulty") {
-			let difficulty = **data_store.get_t::<data::Difficulty>("difficulty").unwrap();
-			println!("{}", difficulty);
-			data_store.remove("difficulty");
-		}
-
 		const BUTTON_HEIGHT: f64 = 64.0;
 		const BUTTON_SPACING: f64 = 8.0;
-		const TOTAL_BUTTONS_HEIGHT: f64 = BUTTON_HEIGHT * 3.0 + BUTTON_SPACING * 2.0;
+		const TOTAL_BUTTONS_HEIGHT: f64 = BUTTON_HEIGHT * 4.0 + BUTTON_SPACING * 3.0;
 		const TITLE_HEIGHT: f64 = 64.0;
 		
 		let win_height = ui.win_h;
 		let remaining_height = win_height - TOTAL_BUTTONS_HEIGHT - 2.0 * TITLE_HEIGHT;
 		let vertical_spacing = remaining_height / 2.0;
+
+		let has_save_data = crate::ASSETS_FOLDER.join("data/runtime/current_game.yaml").exists();
+		let has_leaderboard = crate::ASSETS_FOLDER.join("data/runtime/leaderboard.yaml").exists();	
 		
 		widget::Canvas::new()
 			.color(theme.background)
@@ -91,18 +92,68 @@ impl Scene for MainMenu {
 				self.next_scene_index = Some(SceneManager::DIFFICULTY_SELECTION);
 			}
 
-		if base_button.clone()
-			.label("Settings")
+		let mut continue_button 
+			= base_button.clone()
+			.label("Continue")
 			.mid_bottom_of(ids.button_play)
-			.down(BUTTON_SPACING)
-			.set(ids.button_options, ui)
+			.down(BUTTON_SPACING);
+
+		if !has_save_data {
+			continue_button = continue_button
+			.color(theme.button_disabled)
+			.hover_color(theme.button_disabled)
+			.press_color(theme.button_disabled);
+		}
+
+		if continue_button
+			.set(ids.button_continue, ui)
 			.was_clicked() {
-				println!("Settings");
+				if has_save_data {
+					let file = std::fs::File::open(crate::ASSETS_FOLDER.join("data/runtime/current_game.yaml")).unwrap();
+					let game_data: GameData = serde_yaml::from_reader(file).unwrap();
+					game_data.player.borrow_mut().state = CharacterState::Idle;
+					game_data.enemy.borrow_mut().state = CharacterState::Idle;
+
+					data_store.set("game_data", game_data);
+
+					self.next_scene_index = Some(SceneManager::GAME);
+				}
+			}
+
+		let mut erase_data_button 
+			= base_button.clone()
+			.label("Erase Data")
+			.mid_bottom_of(ids.button_continue)
+			.down(BUTTON_SPACING);
+
+		if !has_save_data && !has_leaderboard {
+			erase_data_button = erase_data_button
+			.color(theme.button_disabled)
+			.hover_color(theme.button_disabled)
+			.press_color(theme.button_disabled);
+		}	
+
+			
+		if erase_data_button
+			.set(ids.button_erase_data, ui)
+			.was_clicked() {
+				#[allow(unused_must_use)]
+				if has_save_data || has_leaderboard {
+					if has_save_data {
+						std::fs::remove_file(crate::ASSETS_FOLDER.join("data/runtime/current_game.yaml"));
+					}
+
+					if has_leaderboard {
+						std::fs::remove_file(crate::ASSETS_FOLDER.join("data/runtime/leaderboard.yaml"));
+					}
+
+					scene_manager.wake_up_events_loop().unwrap_or_else(|e|eprintln!("Failed to wake up events loop: {}", e));
+				}
 			}
 
 		if base_button.clone()
 			.label("Quit")
-			.mid_bottom_of(ids.button_options)
+			.mid_bottom_of(ids.button_erase_data)
 			.down(BUTTON_SPACING)
 			.set(ids.button_quit, ui)
 			.was_clicked()

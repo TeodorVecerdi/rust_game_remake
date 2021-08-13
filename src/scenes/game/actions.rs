@@ -26,10 +26,16 @@ pub enum PlayerAction {
     Focus,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum GameUpdateResult {
+    EnemyKilled,
+    PlayerKilled,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Character<'a> {
-    pub name: &'a str,
-    pub character_type: &'a str,
+pub struct Character {
+    pub name: String,
+    pub character_type: String,
     pub state: CharacterState,
     
     pub health: i32,
@@ -42,19 +48,19 @@ pub struct Character<'a> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GameData<'a, 'b> {
+pub struct GameData {
     pub turn: RefCell<Turn>,
     
-    pub enemies_killed: u32,
+    pub enemies_killed: RefCell<u32>,
     pub is_player_focused: RefCell<bool>,
 
     pub waiting_for_player: RefCell<bool>,
     pub waiting_for_enemy: RefCell<bool>,
 
-    pub player_status_text: RefCell<&'a str>,
-    pub enemy_status_text: RefCell<&'a str>,
+    pub player_status_text: RefCell<String>,
+    pub enemy_status_text: RefCell<String>,
 
-    difficulty_settings: DifficultySettings,
+    pub difficulty_settings: DifficultySettings,
 
     info_text: RefCell<Vec<String>>,
 
@@ -70,10 +76,8 @@ pub struct GameData<'a, 'b> {
     pub enemy_state_timer: RefCell<Instant>,
 
 
-    #[serde(borrow)]
-    pub player: RefCell<Box<Character<'a>>>,
-    #[serde(borrow)]
-    pub enemy: RefCell<Box<Character<'b>>>,
+    pub player: RefCell<Box<Character>>,
+    pub enemy: RefCell<Box<Character>>,
 
     #[serde(skip)]
     rng: RefCell<rand::rngs::ThreadRng>,
@@ -89,8 +93,8 @@ impl CharacterState {
     }
 }
 
-impl<'a> Character<'a> {
-    pub fn new(name: &'a str, character_type: &'a str, stats: CharacterStats, difficulty_settings: DifficultySettings) -> Character<'a> {
+impl Character {
+    pub fn new(name: String, character_type: String, stats: CharacterStats, difficulty_settings: DifficultySettings) -> Character {
         Character {
             name,
             character_type,
@@ -184,8 +188,8 @@ impl<'a> Character<'a> {
     }
 }
 
-impl<'a: 'b, 'b> GameData<'a, 'b> {
-    pub fn new(player: Character<'a>, difficulty_settings: DifficultySettings) -> GameData<'a, 'b> {
+impl GameData {
+    pub fn new(player: Character, difficulty_settings: DifficultySettings) -> GameData {
         let mut rng = rand::thread_rng();
         let turn = match rng.gen_bool(0.5) {
             true => Turn::Enemy,
@@ -196,11 +200,11 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
 
         let data = GameData {
             turn: RefCell::new(turn.clone()),
-            enemies_killed: 0,
+            enemies_killed: RefCell::new(0),
             is_player_focused: RefCell::new(false),
 
-            player_status_text: RefCell::new(match turn { Turn::Player => "Thinking...", Turn::Enemy => "" }),
-            enemy_status_text: RefCell::new(match turn { Turn::Enemy => "Thinking...", Turn::Player => "" }),
+            player_status_text: RefCell::new(match turn { Turn::Player => "Thinking...", Turn::Enemy => "" }.to_string()),
+            enemy_status_text: RefCell::new(match turn { Turn::Enemy => "Thinking...", Turn::Player => "" }.to_string()),
 
             waiting_for_player: RefCell::new(false),
             waiting_for_enemy: RefCell::new(false),
@@ -225,7 +229,7 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
         data
     }
 
-    pub fn update(&self) {
+    pub fn update(&self) -> Option<GameUpdateResult> {
         let turn = self.turn.borrow_mut().clone();
         
         let is_waiting_for_player = self.waiting_for_player.borrow().clone();
@@ -239,12 +243,12 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
         if turn == Turn::Player && !is_waiting_for_player {
             *self.waiting_for_player.borrow_mut() = true;
             if is_player_status_timer_done {
-                *self.player_status_text.borrow_mut() = "Thinking...";
+                *self.player_status_text.borrow_mut() = "Thinking...".to_string();
             }
         } else if turn == Turn::Enemy && !is_waiting_for_enemy {
             *self.waiting_for_enemy.borrow_mut() = true;
             if is_enemy_status_timer_done {
-                *self.enemy_status_text.borrow_mut() = "...Thinking";
+                *self.enemy_status_text.borrow_mut() = "...Thinking".to_string();
             }
 
             *self.wait_for_enemy_timer.borrow_mut() = Instant::now() + Duration::from_secs_f64(self.rng.borrow_mut().gen_range(1.0..4.0));
@@ -253,17 +257,17 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
 
         if is_player_status_timer_done { 
             if is_waiting_for_enemy {
-                *self.player_status_text.borrow_mut() = "";
+                *self.player_status_text.borrow_mut() = "".to_string();
             } else {
-                *self.player_status_text.borrow_mut() = "Thinking...";
+                *self.player_status_text.borrow_mut() = "Thinking...".to_string();
             }
         }
 
         if is_enemy_status_timer_done {
             if is_waiting_for_player {
-                *self.enemy_status_text.borrow_mut() = "";
+                *self.enemy_status_text.borrow_mut() = "".to_string();
             } else {
-                *self.enemy_status_text.borrow_mut() = "...Thinking";
+                *self.enemy_status_text.borrow_mut() = "...Thinking".to_string();
             }
         }
 
@@ -283,13 +287,19 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
 
         if self.enemy.borrow().health <= 0 {
             println!("Enemy is dead!");
+            let kills = self.enemies_killed.borrow().clone();
+            *self.enemies_killed.borrow_mut() = kills + 1;
             *self.enemy.borrow_mut() = Box::new(GameData::make_enemy(self.difficulty_settings));
             self.add_info_text(format!("~===== A wild {} appeared! =====~", self.enemy.borrow().name));
+            return Some(GameUpdateResult::EnemyKilled);
         }
 
         if self.player.borrow().health <= 0 {
             println!("Player is dead!");
+            return Some(GameUpdateResult::PlayerKilled);
         }
+
+        return None;
     }
     
     pub fn player_act(&self, action: PlayerAction) {
@@ -300,13 +310,13 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
             }
             PlayerAction::Heal => {
                 self.player_act_heal();
-                *self.player_status_text.borrow_mut() = "Healing!";    
+                *self.player_status_text.borrow_mut() = "Healing!".to_string();    
                 *self.player_status_timer.borrow_mut() = Instant::now() + STATUS_EFFECT_TIME;
             },
             PlayerAction::Focus => {
                 if self.player_act_focus() {
                     *self.is_player_focused.borrow_mut() = true;
-                    *self.player_status_text.borrow_mut() = "Focusing!";
+                    *self.player_status_text.borrow_mut() = "Focusing!".to_string();
                     *self.player_status_timer.borrow_mut() = Instant::now() + STATUS_EFFECT_TIME;
                 }
             },
@@ -339,14 +349,14 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
         if evaded && is_player_focused {
             evaded = self.enemy.borrow_mut().take_damage(attack_power);
             if evaded {
-                *self.player_status_text.borrow_mut() = "Missed!";
+                *self.player_status_text.borrow_mut() = "Missed!".to_string();
                 self.add_info_text(format!("{} (you) tried to attack {}, but missed!", self.player.borrow().name, self.enemy.borrow().name));
             }
         } else if evaded {
-            *self.player_status_text.borrow_mut() = "Missed!";
+            *self.player_status_text.borrow_mut() = "Missed!".to_string();
             self.add_info_text(format!("{} (you) tried to attack {}, but missed!", self.player.borrow().name, self.enemy.borrow().name));
         } else {
-            *self.player_status_text.borrow_mut() = "Attacking!";
+            *self.player_status_text.borrow_mut() = "Attacking!".to_string();
             self.enemy.borrow_mut().state = CharacterState::Hurt;
             *self.enemy_state_timer.borrow_mut() = Instant::now() + Duration::from_secs_f64(self.rng.borrow_mut().gen_range(1.0..2.5));
             self.add_info_text(format!("{} (you) attacked {} for {} damage!", self.player.borrow().name, self.enemy.borrow().name, attack_power));
@@ -391,12 +401,12 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
             let attack_power = self.enemy.borrow().get_attack_power();
             let evaded = self.player.borrow_mut().take_damage(attack_power);
             if evaded {
-                *self.enemy_status_text.borrow_mut() = "Missed!";
+                *self.enemy_status_text.borrow_mut() = "Missed!".to_string();
                 self.add_info_text(format!("{} tried to attack {} (you), but missed!", self.enemy.borrow().name, self.player.borrow().name));
             } else {
                 self.player.borrow_mut().state = CharacterState::Hurt;
                 *self.player_state_timer.borrow_mut() = Instant::now() + Duration::from_secs_f64(self.rng.borrow_mut().gen_range(1.0..2.5));
-                *self.enemy_status_text.borrow_mut() = "Attacking!";
+                *self.enemy_status_text.borrow_mut() = "Attacking!".to_string();
                 self.add_info_text(format!("{} attacked {} (you) for {} damage!", self.enemy.borrow().name, self.player.borrow().name, attack_power));
             }
             *self.enemy_status_timer.borrow_mut() = Instant::now() + STATUS_EFFECT_TIME;
@@ -404,11 +414,11 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
             let heal_power = self.enemy.borrow().get_heal_power();
             self.enemy.borrow_mut().heal(heal_power);
 
-            *self.enemy_status_text.borrow_mut() = "Healing!";
+            *self.enemy_status_text.borrow_mut() = "Healing!".to_string();
             *self.enemy_status_timer.borrow_mut() = Instant::now() + STATUS_EFFECT_TIME;
             self.add_info_text(format!("{} healed for {}!", self.enemy.borrow().name, heal_power));
         } else {
-            *self.enemy_status_text.borrow_mut() = "Trembling in fear!";
+            *self.enemy_status_text.borrow_mut() = "Trembling in fear!".to_string();
             *self.enemy_status_timer.borrow_mut() = Instant::now() + STATUS_EFFECT_TIME;
         }
     }
@@ -429,7 +439,7 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
         self.info_text.borrow_mut().push(text);
     }
 
-    fn make_enemy(difficulty_settings: DifficultySettings) -> Character<'b> {
+    fn make_enemy(difficulty_settings: DifficultySettings) -> Character {
         let mut rng = rand::thread_rng();
         let enemy_assigned_stats = data::CharacterStats::random(&mut rng, difficulty_settings.enemy_base_attribute_points);
         let enemy_type_idx = rng.gen_range(0..=data::CHARACTER_TYPE_COUNT);
@@ -443,7 +453,7 @@ impl<'a: 'b, 'b> GameData<'a, 'b> {
         
         let enemy_stats = data::CharacterStats::base_character_stats()[enemy_type] + enemy_assigned_stats;
         
-        Character::new(enemy_name, enemy_type, enemy_stats, difficulty_settings.clone()).as_enemy()
+        Character::new(enemy_name.to_string(), enemy_type.to_string(), enemy_stats, difficulty_settings.clone()).as_enemy()
     }
 }
 

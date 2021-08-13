@@ -7,7 +7,7 @@ pub struct Leaderboard {
     pub entries: Vec<LeaderboardEntry>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LeaderboardEntry {
     pub name: String,
     pub score: u32,
@@ -19,16 +19,13 @@ impl Leaderboard {
         Leaderboard::read_from_file(capacity)
     }
 
-    pub fn add_entry(&mut self, name: &str, score: u32, difficulty: Difficulty) {
-        let entry = LeaderboardEntry {
-            name: String::from(name),
-            score,
-            difficulty
-        };
+    pub fn add_entry(&mut self, entry: LeaderboardEntry) {
         self.entries.push(entry);
         
         self.sort();
         self.remove_extras();
+
+        self.write_to_file();
     }
 
     fn sort(&mut self) {
@@ -48,6 +45,7 @@ impl Leaderboard {
         }
     }
 
+    #[allow(unused_must_use)]
     fn read_from_file(capacity: Option<usize>) -> Self {
         let capacity = capacity.unwrap_or(10);
         let path = super::ASSETS_FOLDER.join(format!("data/runtime/leaderboard.yaml"));
@@ -59,7 +57,7 @@ impl Leaderboard {
 
         let file = std::fs::File::open(path);
         match file {
-            Err(err) => { 
+            Err(_) => { 
                 let leaderboard = Leaderboard::new(capacity);
                 leaderboard.write_to_file();
                 leaderboard
@@ -69,7 +67,8 @@ impl Leaderboard {
             }
         }
     }
-
+    
+    #[allow(unused_must_use)]
     fn write_to_file(&self) {
         let path = super::ASSETS_FOLDER.join(format!("data/runtime/leaderboard.yaml"));
         
@@ -78,7 +77,7 @@ impl Leaderboard {
             std::fs::create_dir_all(parent);
         }
 
-        let file = std::fs::File::open(path).unwrap();
+        let file = std::fs::File::create(path).unwrap();
         serde_yaml::to_writer(file, self);
     }
 }
