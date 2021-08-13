@@ -20,4 +20,10 @@ pub use data_store
 	DataStore
 };
 
+mod leaderboard;
+pub use leaderboard
+:: {
+	Leaderboard
+};
+
 pub use super::ASSETS_FOLDER;

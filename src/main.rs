@@ -19,7 +19,8 @@ pub(crate) mod math;
 
 use crate::{
 	scenes::{SceneManager, Scene}, 
-	theme::ThemeManager
+	theme::ThemeManager,
+	data::Leaderboard,
 };
 
 use lazy_static::lazy_static;
@@ -139,11 +140,6 @@ fn get_display(events_loop: &glium::glutin::EventsLoop, width: u32, height: u32,
 
 
 fn main() {
-	todo!("Read what tasks are left to do!");
-	// TODO: 
-	// - [ ] Handle player death (with a game over scene)
-	// - [ ] Player level-up and attribute assigning (can copy existing scene and just change a few things)
-
 	let (width, height, app_theme, fullscreen) = get_args(get_cli_options());
 
 	let mut events_loop = glium::glutin::EventsLoop::new();
@@ -193,6 +189,7 @@ fn main() {
 	};
 
 	data_store.set("is_light_theme", is_light_theme);
+	data_store.set("leaderboard", Leaderboard::get(Some(10)));
 	let mut last_frame_time = std::time::Instant::now();
 
 	'main: loop {

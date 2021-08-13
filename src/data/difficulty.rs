@@ -43,6 +43,18 @@ impl Difficulty {
 			Difficulty::Hard => "hard",
 		}
 	}
+
+	pub const fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (*self, *other) {
+			(Difficulty::Easy, Difficulty::Normal) => std::cmp::Ordering::Less,
+			(Difficulty::Easy, Difficulty::Hard) => std::cmp::Ordering::Less,
+			(Difficulty::Normal, Difficulty::Hard) => std::cmp::Ordering::Less,
+			(Difficulty::Normal, Difficulty::Easy) => std::cmp::Ordering::Greater,
+			(Difficulty::Hard, Difficulty::Easy) => std::cmp::Ordering::Greater,
+			(Difficulty::Hard, Difficulty::Normal) => std::cmp::Ordering::Greater,
+			_ => std::cmp::Ordering::Equal
+		}
+    }
 }
 
 impl std::fmt::Display for Difficulty {
@@ -55,6 +67,7 @@ impl std::fmt::Display for Difficulty {
         write!(f, "{} Difficulty", display_name)
     }
 }
+
 
 fn init_difficulty_settings () {
 	use std::io::Write;
