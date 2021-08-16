@@ -193,10 +193,6 @@ impl Scene for Game {
                 _ => {}
             }
         }
-
-        const HEALTHBAR_HEIGHT: f64 = 48.0;
-        const STAT_HEIGHT: f64 = 96.0;
-        const STAT_WIDTH: f64 = 64.0;
         
         const PANEL_SPACING: f64 = 64.0;
         const PANEL_MARGIN: f64 = 32.0;
@@ -211,10 +207,16 @@ impl Scene for Game {
         let panel_height = ui.win_h / 2.0 - PANEL_SPACING * 2.0;
         let panel_width = ui.win_w / 2.0 - PANEL_MARGIN * 2.0 - PANEL_SPACING / 2.0;
         let image_size = panel_height - panel_title_height - PANEL_ELEMENT_MARGIN * 2.0;
-        let button_height = (panel_height - panel_title_height - HEALTHBAR_HEIGHT - STAT_HEIGHT - PANEL_ELEMENT_MARGIN * 5.0) / 3.0;
         
         let player_image_id = images.get(&format!("{}_{}", game_data.player.borrow().character_type, game_data.player.borrow().state.image_id())).unwrap();
         let player_right_column_width = panel_width - image_size - PANEL_ELEMENT_MARGIN * 3.0;
+        
+        let top_space = (1.0 / 3.0) * panel_height - 2.0 * PANEL_ELEMENT_MARGIN;
+        let healthbar_height = top_space * (1.0 / 3.0); // 1/3 of 1/3 of the panel height
+        let stat_height = top_space * (2.0 / 3.0); // 2/3 of 1/3 of the panel height
+        let stat_width = stat_height * (2.0 / 3.0);
+        
+        let button_height = (panel_height - panel_title_height - healthbar_height - stat_height - PANEL_ELEMENT_MARGIN * 5.0) / 3.0;
 
         widget::Canvas::new()
             .color(theme.background)
@@ -257,7 +259,7 @@ impl Scene for Game {
             player_health_current, 
             player_max_health, 
             player_right_column_width, 
-            HEALTHBAR_HEIGHT, 
+            healthbar_height, 
             ids.player_healthbar_background, 
             ids.player_healthbar_fill, 
             ids.player_healthbar_text, 
@@ -271,8 +273,8 @@ impl Scene for Game {
         stat (
             player_stats.vitality,
             *vitality_id,
-            STAT_WIDTH,
-            STAT_HEIGHT,
+            stat_width,
+            stat_height,
             PANEL_ELEMENT_MARGIN / 2.0,
             ids.player_stat_vitality_container,
             ids.player_stat_vitality_image,
@@ -281,15 +283,15 @@ impl Scene for Game {
             theme,
             fonts
         )
-        .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
+        .y_place_on(ids.player_container, Place::End(Some(healthbar_height + PANEL_ELEMENT_MARGIN * 2.0)))
         .x_place_on(ids.player_container, Place::Start(Some(image_size + PANEL_ELEMENT_MARGIN * 2.0)))
         .set(ids.player_stat_vitality_container, ui);
 
         stat (
             player_stats.attack,
             *attack_id,
-            STAT_WIDTH,
-            STAT_HEIGHT,
+            stat_width,
+            stat_height,
             PANEL_ELEMENT_MARGIN / 2.0,
             ids.player_stat_attack_container,
             ids.player_stat_attack_image,
@@ -298,15 +300,15 @@ impl Scene for Game {
             theme,
             fonts
         )
-        .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
-        .x_place_on(ids.player_container, Place::Start(Some(image_size + STAT_WIDTH + PANEL_ELEMENT_MARGIN * 2.5)))
+        .y_place_on(ids.player_container, Place::End(Some(healthbar_height + PANEL_ELEMENT_MARGIN * 2.0)))
+        .x_place_on(ids.player_container, Place::Start(Some(image_size + stat_width + PANEL_ELEMENT_MARGIN * 2.5)))
         .set(ids.player_stat_attack_container, ui);
 
         stat (
             player_stats.defense,
             *defense_id,
-            STAT_WIDTH,
-            STAT_HEIGHT,
+            stat_width,
+            stat_height,
             PANEL_ELEMENT_MARGIN / 2.0,
             ids.player_stat_defense_container,
             ids.player_stat_defense_image,
@@ -315,15 +317,15 @@ impl Scene for Game {
             theme,
             fonts
         )
-        .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
-        .x_place_on(ids.player_container, Place::Start(Some(image_size + STAT_WIDTH * 2.0 + PANEL_ELEMENT_MARGIN * 3.0)))
+        .y_place_on(ids.player_container, Place::End(Some(healthbar_height + PANEL_ELEMENT_MARGIN * 2.0)))
+        .x_place_on(ids.player_container, Place::Start(Some(image_size + stat_width * 2.0 + PANEL_ELEMENT_MARGIN * 3.0)))
         .set(ids.player_stat_defense_container, ui);
 
         stat (
             player_stats.stamina,
             *stamina_id,
-            STAT_WIDTH,
-            STAT_HEIGHT,
+            stat_width,
+            stat_height,
             PANEL_ELEMENT_MARGIN / 2.0,
             ids.player_stat_stamina_container,
             ids.player_stat_stamina_image,
@@ -332,8 +334,8 @@ impl Scene for Game {
             theme,
             fonts
         )
-        .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
-        .x_place_on(ids.player_container, Place::Start(Some(image_size + STAT_WIDTH * 3.0 + PANEL_ELEMENT_MARGIN * 3.5)))
+        .y_place_on(ids.player_container, Place::End(Some(healthbar_height + PANEL_ELEMENT_MARGIN * 2.0)))
+        .x_place_on(ids.player_container, Place::Start(Some(image_size + stat_width * 3.0 + PANEL_ELEMENT_MARGIN * 3.5)))
         .set(ids.player_stat_stamina_container, ui);
 
         let mut base_button = widget::Button::new()
@@ -360,7 +362,7 @@ impl Scene for Game {
         if base_button.clone()
             .label("ATTACK")
             .x_place_on(ids.player_container, Place::Start(Some(image_size + PANEL_ELEMENT_MARGIN * 2.0)))
-            .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + STAT_HEIGHT + PANEL_ELEMENT_MARGIN * 3.0)))
+            .y_place_on(ids.player_container, Place::End(Some(healthbar_height + stat_height + PANEL_ELEMENT_MARGIN * 3.0)))
             .set(ids.player_act_attack, ui)
             .was_clicked()
         {
@@ -372,7 +374,7 @@ impl Scene for Game {
             base_button.clone()
                 .label("FOCUS")
                 .x_place_on(ids.player_container, Place::Start(Some(image_size + PANEL_ELEMENT_MARGIN * 2.0)))
-                .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + STAT_HEIGHT + button_height + PANEL_ELEMENT_MARGIN * 3.5)))
+                .y_place_on(ids.player_container, Place::End(Some(healthbar_height + stat_height + button_height + PANEL_ELEMENT_MARGIN * 3.5)))
                 .color(theme.button_disabled)
                 .hover_color(theme.button_disabled)
                 .press_color(theme.button_disabled)
@@ -381,7 +383,7 @@ impl Scene for Game {
             if base_button.clone()
                 .label("FOCUS")
                 .x_place_on(ids.player_container, Place::Start(Some(image_size + PANEL_ELEMENT_MARGIN * 2.0)))
-                .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + STAT_HEIGHT + button_height + PANEL_ELEMENT_MARGIN * 3.5)))
+                .y_place_on(ids.player_container, Place::End(Some(healthbar_height + stat_height + button_height + PANEL_ELEMENT_MARGIN * 3.5)))
                 .set(ids.player_act_focus, ui)
                 .was_clicked()
             {
@@ -394,7 +396,7 @@ impl Scene for Game {
         if base_button.clone()
             .label("HEAL")
             .x_place_on(ids.player_container, Place::Start(Some(image_size + PANEL_ELEMENT_MARGIN * 2.0)))
-            .y_place_on(ids.player_container, Place::End(Some(HEALTHBAR_HEIGHT + STAT_HEIGHT + button_height * 2.0 + PANEL_ELEMENT_MARGIN * 4.0)))
+            .y_place_on(ids.player_container, Place::End(Some(healthbar_height + stat_height + button_height * 2.0 + PANEL_ELEMENT_MARGIN * 4.0)))
             .set(ids.player_act_heal, ui)
             .was_clicked()
         {
@@ -441,7 +443,7 @@ impl Scene for Game {
             enemy_health_current, 
             enemy_max_health,  
             enemy_right_column_width, 
-            HEALTHBAR_HEIGHT, 
+            healthbar_height, 
             ids.enemy_healthbar_background, 
             ids.enemy_healthbar_fill, 
             ids.enemy_healthbar_text, 
@@ -455,8 +457,8 @@ impl Scene for Game {
         stat (
             enemy_stats.vitality,
             *vitality_id,
-            STAT_WIDTH,
-            STAT_HEIGHT,
+            stat_width,
+            stat_height,
             PANEL_ELEMENT_MARGIN / 2.0,
             ids.enemy_stat_vitality_container,
             ids.enemy_stat_vitality_image,
@@ -465,15 +467,15 @@ impl Scene for Game {
             theme,
             fonts
         )
-        .y_place_on(ids.enemy_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
+        .y_place_on(ids.enemy_container, Place::End(Some(healthbar_height + PANEL_ELEMENT_MARGIN * 2.0)))
         .x_place_on(ids.enemy_container, Place::Start(Some(image_size + PANEL_ELEMENT_MARGIN * 2.0)))
         .set(ids.enemy_stat_vitality_container, ui);
 
         stat (
             enemy_stats.attack,
             *attack_id,
-            STAT_WIDTH,
-            STAT_HEIGHT,
+            stat_width,
+            stat_height,
             PANEL_ELEMENT_MARGIN / 2.0,
             ids.enemy_stat_attack_container,
             ids.enemy_stat_attack_image,
@@ -482,15 +484,15 @@ impl Scene for Game {
             theme,
             fonts
         )
-        .y_place_on(ids.enemy_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
-        .x_place_on(ids.enemy_container, Place::Start(Some(image_size + STAT_WIDTH + PANEL_ELEMENT_MARGIN * 2.5)))
+        .y_place_on(ids.enemy_container, Place::End(Some(healthbar_height + PANEL_ELEMENT_MARGIN * 2.0)))
+        .x_place_on(ids.enemy_container, Place::Start(Some(image_size + stat_width + PANEL_ELEMENT_MARGIN * 2.5)))
         .set(ids.enemy_stat_attack_container, ui);
 
         stat (
             enemy_stats.defense,
             *defense_id,
-            STAT_WIDTH,
-            STAT_HEIGHT,
+            stat_width,
+            stat_height,
             PANEL_ELEMENT_MARGIN / 2.0,
             ids.enemy_stat_defense_container,
             ids.enemy_stat_defense_image,
@@ -499,15 +501,15 @@ impl Scene for Game {
             theme,
             fonts
         )
-        .y_place_on(ids.enemy_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
-        .x_place_on(ids.enemy_container, Place::Start(Some(image_size + STAT_WIDTH * 2.0 + PANEL_ELEMENT_MARGIN * 3.0)))
+        .y_place_on(ids.enemy_container, Place::End(Some(healthbar_height + PANEL_ELEMENT_MARGIN * 2.0)))
+        .x_place_on(ids.enemy_container, Place::Start(Some(image_size + stat_width * 2.0 + PANEL_ELEMENT_MARGIN * 3.0)))
         .set(ids.enemy_stat_defense_container, ui);
 
         stat (
             enemy_stats.stamina,
             *stamina_id,
-            STAT_WIDTH,
-            STAT_HEIGHT,
+            stat_width,
+            stat_height,
             PANEL_ELEMENT_MARGIN / 2.0,
             ids.enemy_stat_stamina_container,
             ids.enemy_stat_stamina_image,
@@ -516,8 +518,8 @@ impl Scene for Game {
             theme,
             fonts
         )
-        .y_place_on(ids.enemy_container, Place::End(Some(HEALTHBAR_HEIGHT + PANEL_ELEMENT_MARGIN * 2.0)))
-        .x_place_on(ids.enemy_container, Place::Start(Some(image_size + STAT_WIDTH * 3.0 + PANEL_ELEMENT_MARGIN * 3.5)))
+        .y_place_on(ids.enemy_container, Place::End(Some(healthbar_height + PANEL_ELEMENT_MARGIN * 2.0)))
+        .x_place_on(ids.enemy_container, Place::Start(Some(image_size + stat_width * 3.0 + PANEL_ELEMENT_MARGIN * 3.5)))
         .set(ids.enemy_stat_stamina_container, ui);
         
         if base_button.clone()

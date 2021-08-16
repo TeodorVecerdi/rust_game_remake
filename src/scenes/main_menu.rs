@@ -80,8 +80,6 @@ impl Scene for MainMenu {
 
 		let has_save_data = crate::ASSETS_FOLDER.join("data/runtime/current_game.yaml").exists();
 		let has_leaderboard = !leaderboard.is_empty;
-
-		
 		
 		widget::Canvas::new()
 			.color(theme.background)
