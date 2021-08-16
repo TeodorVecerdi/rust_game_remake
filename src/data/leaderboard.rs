@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 pub struct Leaderboard {
     pub capacity: usize,
     pub entries: Vec<LeaderboardEntry>,
+    #[serde(skip)]
+    pub is_empty: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,8 +17,12 @@ pub struct LeaderboardEntry {
 }
 
 impl Leaderboard {
-    pub fn get(capacity: Option<usize>) -> Self {
+    pub fn make(capacity: Option<usize>) -> Self {
         Leaderboard::read_from_file(capacity)
+    }
+
+    pub fn get(&self, index: usize) -> Option<&LeaderboardEntry> {
+        self.entries.get(index)
     }
 
     pub fn add_entry(&mut self, entry: LeaderboardEntry) {
@@ -42,6 +48,7 @@ impl Leaderboard {
         Leaderboard {
             capacity,
             entries: Vec::new(),
+            is_empty: true,
         }
     }
 
@@ -63,7 +70,9 @@ impl Leaderboard {
                 leaderboard
             }
             Ok(file) => { 
-                serde_yaml::from_reader(file).unwrap()
+                let mut leaderboard: Leaderboard = serde_yaml::from_reader(file).unwrap();
+                leaderboard.is_empty = leaderboard.entries.len() == 0;
+                leaderboard
             }
         }
     }

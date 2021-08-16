@@ -189,7 +189,7 @@ fn main() {
 	};
 
 	data_store.set("is_light_theme", is_light_theme);
-	data_store.set("leaderboard", Leaderboard::get(Some(10)));
+	data_store.set("leaderboard", Leaderboard::make(Some(10)));
 	let has_save_data = ASSETS_FOLDER.join("data/runtime/current_game.yaml").exists();
 	let has_leaderboard = ASSETS_FOLDER.join("data/runtime/leaderboard.yaml").exists();
 	data_store.set("has_save_data", has_save_data);

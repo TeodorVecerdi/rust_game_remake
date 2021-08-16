@@ -7,7 +7,7 @@ use crate::{
 	data, theme,
 	};
 
-use conrod_core::position::Place;
+use conrod_core::position::{Align, Place};
 use conrod_core::{
 	position::Relative, 
 	widget,
@@ -26,6 +26,19 @@ widget_ids! {
 
 		button_change_theme,
 		text_change_theme,
+
+		leaderboard_container,
+		leaderboard_title,
+		leaderboard_text_0,
+		leaderboard_text_1,
+		leaderboard_text_2,
+		leaderboard_text_3,
+		leaderboard_text_4,
+		leaderboard_text_5,
+		leaderboard_text_6,
+		leaderboard_text_7,
+		leaderboard_text_8,
+		leaderboard_text_9,
 	}
 }
 
@@ -45,16 +58,30 @@ impl Scene for MainMenu {
 		let ids = &self.ids;
 
 		const BUTTON_HEIGHT: f64 = 64.0;
+		const BUTTON_WIDTH: f64 = 320.0;
 		const BUTTON_SPACING: f64 = 8.0;
 		const TOTAL_BUTTONS_HEIGHT: f64 = BUTTON_HEIGHT * 4.0 + BUTTON_SPACING * 3.0;
-		const TITLE_HEIGHT: f64 = 64.0;
+		const TITLE_HEIGHT: f64 = 56.0;
+
+		const LEADERBOARD_SPACING_X: f64 = 48.0;
+		const LEADERBOARD_SPACING_Y: f64 = 96.0;
 		
 		let win_height = ui.win_h;
 		let remaining_height = win_height - TOTAL_BUTTONS_HEIGHT - 2.0 * TITLE_HEIGHT;
 		let vertical_spacing = remaining_height / 2.0;
 
+		let leaderboard_width = ui.win_w / 2.0 - BUTTON_WIDTH / 2.0 - LEADERBOARD_SPACING_X * 2.0;
+		let leaderboard_height = ui.win_h - LEADERBOARD_SPACING_Y * 2.0;
+
+		let leaderboard;
+		{
+			leaderboard = *data_store.get_t::<data::Leaderboard>("leaderboard").unwrap();
+		}
+
 		let has_save_data = crate::ASSETS_FOLDER.join("data/runtime/current_game.yaml").exists();
-		let has_leaderboard = crate::ASSETS_FOLDER.join("data/runtime/leaderboard.yaml").exists();	
+		let has_leaderboard = !leaderboard.is_empty;
+
+		
 		
 		widget::Canvas::new()
 			.color(theme.background)
@@ -145,6 +172,8 @@ impl Scene for MainMenu {
 
 					if has_leaderboard {
 						std::fs::remove_file(crate::ASSETS_FOLDER.join("data/runtime/leaderboard.yaml"));
+						data_store.remove("leaderboard");
+						data_store.set("leaderboard", data::Leaderboard::make(Some(10)));
 					}
 
 					scene_manager.wake_up_events_loop().unwrap_or_else(|e|eprintln!("Failed to wake up events loop: {}", e));
@@ -186,6 +215,56 @@ impl Scene for MainMenu {
 				data_store.set("should_toggle_theme", ());
 			}
 			scene_manager.wake_up_events_loop().unwrap_or_else(|e| eprintln!("wakeup error: {}", e));
+		}
+
+		widget::Rectangle::fill_with([leaderboard_width, leaderboard_height], theme.panel_dark)
+			.y_align_to(ids.root, Align::Middle)
+			.x_place_on(ids.root, Place::Start(Some(LEADERBOARD_SPACING_X)))
+			.set(ids.leaderboard_container, ui);
+
+		widget::Text::new("Leaderboard")
+			.font_size(48)
+			.font_id(*fonts.get("lato").unwrap())
+			.color(theme.text_primary)
+			.x_align_to(ids.leaderboard_container, Align::Middle)
+			.y_place_on(ids.leaderboard_container, Place::End(Some(8.0)))
+			.set(ids.leaderboard_title, ui);
+
+		let text_ids = [
+			ids.leaderboard_text_0, ids.leaderboard_text_1, ids.leaderboard_text_2, ids.leaderboard_text_3,
+			ids.leaderboard_text_4, ids.leaderboard_text_5, ids.leaderboard_text_6, ids.leaderboard_text_7,
+			ids.leaderboard_text_8, ids.leaderboard_text_9,
+		];
+
+		let leaderboard_text_height = leaderboard_height - 16.0 * 2.0 /* Top+bottom spacing */ - 48.0 - 16.0 /* Title spacing */;
+		let leaderboard_text_spacing = leaderboard_text_height / leaderboard.capacity as f64;
+
+		let entry0_text: String = match leaderboard.get(0) {
+			None => String::from(" 1. "),
+			Some(entry) => format!("{:>2}. [{}] {} - {}", 1, entry.difficulty.as_str(), entry.name, entry.score),
+		};
+		widget::Text::new(&entry0_text)
+			.font_size(24)
+			.font_id(*fonts.get("lato").unwrap())
+			.color(theme.text_primary)
+			.x_place_on(ids.leaderboard_container, Place::Start(Some(16.0)))
+			.y_place_on(ids.leaderboard_container, Place::End(Some(64.0 + 16.0)))
+			.h(0.0)
+			.set(text_ids[0], ui);
+
+		for i in 1..leaderboard.capacity {
+			let entry_text: String = match leaderboard.get(i) {
+				None => format!("{:>2}. ", i + 1),
+				Some(entry) => format!("{:>2}. [{}] {} - {}", i + 1, entry.difficulty.as_str(), entry.name, entry.score),
+			};
+			widget::Text::new(&entry_text)
+				.font_size(24)
+				.font_id(*fonts.get("lato").unwrap())
+				.color(theme.text_primary)
+				.x_place_on(ids.leaderboard_container, Place::Start(Some(16.0)))
+				.y_place_on(ids.leaderboard_container, Place::End(Some(i as f64 * leaderboard_text_spacing + 64.0 + 16.0)))
+				.h(0.0)
+				.set(text_ids[i], ui);
 		}
 	}
 

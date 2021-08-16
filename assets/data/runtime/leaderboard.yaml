@@ -13,3 +13,6 @@ entries:
   - name: Riley
     score: 0
     difficulty: Normal
+  - name: Len
+    score: 3
+    difficulty: Easy

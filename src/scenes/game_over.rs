@@ -31,7 +31,7 @@ impl Scene for GameOver {
         
         if !data_store.has("added_leaderboard_entry") {
             data_store.get_mut_t::<Leaderboard>("leaderboard").unwrap().add_entry(leaderboard_entry.clone());
-            data_store.set("added_leaderboard_entry", true);
+            data_store.set("added_leaderboard_entry", ());
         }
 
         widget::Canvas::new()
