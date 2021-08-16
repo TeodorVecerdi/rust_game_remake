@@ -16,3 +16,6 @@ entries:
   - name: Len
     score: 3
     difficulty: Easy
+  - name: Zachariah
+    score: 0
+    difficulty: Easy

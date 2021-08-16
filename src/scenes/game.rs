@@ -642,19 +642,25 @@ fn console (
     fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>
 ) -> widget::Rectangle
 {
+    const TEXT_SPACING: f64 = 12.0;
     let console_widget = widget::Rectangle::fill_with(console_size, theme.panel_dark);
-    let text_spacing = console_size[1] / 24.0;
+    let total_vertical_space = console_size[1] - 11.0 * TEXT_SPACING;
+    let font_size = (total_vertical_space / 10.0) as u32;
+    // let text_spacing = console_size[1] / 24.0;
+    
     if text.len() == 0 {
         return console_widget;
     }
+    
     console_text(
         console_id,
         console_id,
         text_ids[0],
         text.get(0).unwrap(),
 
-        text_spacing,
-        text_spacing,
+        TEXT_SPACING,
+        TEXT_SPACING,
+        font_size,
 
         ui,
         theme,
@@ -673,8 +679,9 @@ fn console (
             text_ids[i],
             text.get(i).unwrap(),
     
-            text_spacing + 25.0,
-            text_spacing,
+            TEXT_SPACING + font_size as f64,
+            TEXT_SPACING,
+                font_size,
     
             ui,
             theme,
@@ -692,15 +699,17 @@ fn console_text (
 
     top: f64,
     left: f64,
+    font_size: u32,
 
     ui: &mut conrod_core::UiCell,
     theme: &theme::Theme,
     fonts: &std::collections::HashMap<&str, conrod_core::text::font::Id>
 ) {
     widget::Text::new(&&text)
-        .font_size(24)
+        .font_size(font_size)
         .font_id(*fonts.get("lato").unwrap())
         .color(theme.text_primary)
+        .h(0.0)
         .y_place_on(parent_id, Place::End(Some(top)))
         .x_place_on(console_id, Place::Start(Some(left)))
         .parent(parent_id)
